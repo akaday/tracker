@@ -9,6 +9,7 @@ use ratatui::{
     widgets::{Block, List, ListItem, ListState, Scrollbar, ScrollbarState},
     Frame,
 };
+use strum::IntoEnumIterator;
 
 use crate::satellite::Satellite;
 use crate::{app::App, object::Object};
@@ -97,31 +98,9 @@ impl Component for Satellites {
 
 impl Default for Satellites {
     fn default() -> Self {
-        let satellites = [
-            Satellite::Css,
-            Satellite::Iss,
-            Satellite::Weather,
-            Satellite::NOAA,
-            Satellite::GOES,
-            Satellite::EarthResources,
-            Satellite::SearchRescue,
-            Satellite::DisasterMonitoring,
-            Satellite::Gps,
-            Satellite::Glonass,
-            Satellite::Galileo,
-            Satellite::Beidou,
-            Satellite::SpaceEarthScience,
-            Satellite::Geodetic,
-            Satellite::Engineering,
-            Satellite::Education,
-            Satellite::Dfh1,
-            Satellite::Military,
-            Satellite::RadarCalibration,
-            Satellite::CubeSats,
-        ];
         Self {
             objects: Vec::new(),
-            items: satellites.into_iter().map(Item::from).collect(),
+            items: Satellite::iter().map(Item::from).collect(),
             list_state: Default::default(),
             area: Default::default(),
         }

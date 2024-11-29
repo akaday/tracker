@@ -1439,6 +1439,7 @@ dependencies = [
  "ratatui",
  "reverse_geocoder",
  "sgp4",
+ "strum",
  "tokio",
  "unicode-width 0.2.0",
  "ureq",

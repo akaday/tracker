@@ -1,38 +1,51 @@
-use std::{fmt, fs, path::PathBuf, time::Duration};
+use std::{fs, path::PathBuf, time::Duration};
 
+use strum::{Display, EnumIter};
 use ureq::serde_json;
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Display, EnumIter)]
 pub enum Satellite {
     // Space stations
+    #[strum(to_string = "CSS")]
     Css,
+    #[strum(to_string = "ISS")]
     Iss,
 
     // Weather satellites
     Weather,
-    NOAA,
-    GOES,
+    #[strum(to_string = "NOAA")]
+    Noaa,
+    #[strum(to_string = "GOES")]
+    Goes,
 
     // Earth resources satellites
+    #[strum(to_string = "Earth resources")]
     EarthResources,
+    #[strum(to_string = "Search & rescue")]
     SearchRescue,
+    #[strum(to_string = "Disaster monitoring")]
     DisasterMonitoring,
 
     // Navigation satellites
+    #[strum(to_string = "GPS Operational")]
     Gps,
+    #[strum(to_string = "GLONASS Operational")]
     Glonass,
     Galileo,
     Beidou,
 
     // Scientific satellites
+    #[strum(to_string = "Space & Earth Science")]
     SpaceEarthScience,
     Geodetic,
     Engineering,
     Education,
 
     // Miscellaneous satellites
+    #[strum(to_string = "DFH-1")]
     Dfh1,
     Military,
+    #[strum(to_string = "Radar calibration")]
     RadarCalibration,
     CubeSats,
 }
@@ -74,8 +87,8 @@ impl Satellite {
     fn group(&self) -> Option<&str> {
         match self {
             Self::Weather => Some("weather"),
-            Self::NOAA => Some("noaa"),
-            Self::GOES => Some("goes"),
+            Self::Noaa => Some("noaa"),
+            Self::Goes => Some("goes"),
             Self::EarthResources => Some("resource"),
             Self::SearchRescue => Some("sarsat"),
             Self::DisasterMonitoring => Some("dmc"),
@@ -113,23 +126,5 @@ impl Satellite {
             return response.into_json().unwrap();
         }
         unreachable!();
-    }
-}
-
-impl fmt::Display for Satellite {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Gps => write!(f, "GPS Operational"),
-            Self::Glonass => write!(f, "GLONASS Operational"),
-            Self::Css => write!(f, "CSS"),
-            Self::Iss => write!(f, "ISS"),
-            Self::Dfh1 => write!(f, "DFH-1"),
-            Self::EarthResources => write!(f, "Earth resources"),
-            Self::SearchRescue => write!(f, "Search & rescue"),
-            Self::DisasterMonitoring => write!(f, "Disaster monitoring"),
-            Self::SpaceEarthScience => write!(f, "Space & Earth Science"),
-            Self::RadarCalibration => write!(f, "Radar calibration"),
-            _ => write!(f, "{:?}", self),
-        }
     }
 }
