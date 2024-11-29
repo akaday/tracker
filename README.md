@@ -6,9 +6,9 @@ A satellite ground track TUI.
 
 ## Features
 
-- Display the current position and trajectory of objects (SGP4 prediction model).
-- Display detailed information of objects.
-- Update TLE via the Internet.
+- **Position and trajectory**: Displays the current positions and trajectories of objects using the SGP4 model.
+- **Detailed information**: Provides comprehensive details about the selected object.
+- **Automatic updates**: Updates orbital elements automatically via the internet.
 
 ## License
 
