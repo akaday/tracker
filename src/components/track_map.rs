@@ -69,7 +69,6 @@ impl Component for TrackMap {
 
                     // Calculate future positions along the trajectory
                     let mut points = Vec::new();
-                    points.push((state.position[0], state.position[1]));
                     for minutes in 1..selected.orbital_period().num_minutes() {
                         let time = Utc::now() + Duration::minutes(minutes);
                         let state = selected.predict(time).unwrap();
@@ -87,7 +86,6 @@ impl Component for TrackMap {
                             ctx.draw(&Line::new(-x_edge, y1, x2, y2, Color::LightBlue));
                             continue;
                         }
-                        assert!((y1 - y2).abs() < 90.0);
                         ctx.draw(&Line::new(x1, y1, x2, y2, Color::LightBlue));
                     }
 
