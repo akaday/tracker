@@ -172,12 +172,14 @@ pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
         }
         _ => {}
     }
-    let index =
+    let row =
         (event.row - inner_area.y) as usize + app.object_information.table_state.get_mut().offset();
-    app.object_information
-        .table_state
-        .get_mut()
-        .select(Some(index));
+    let index = if row < app.object_information.table_size.get() {
+        Some(row)
+    } else {
+        None
+    };
+    app.object_information.table_state.get_mut().select(index);
 
     Ok(())
 }

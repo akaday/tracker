@@ -141,8 +141,13 @@ pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
         }
         _ => {}
     }
-    let index = (event.row - inner_area.y) as usize + app.satellites.list_state.get_mut().offset();
-    app.satellites.list_state.get_mut().select(Some(index));
+    let row = (event.row - inner_area.y) as usize + app.satellites.list_state.get_mut().offset();
+    let index = if row < app.satellites.items.len() {
+        Some(row)
+    } else {
+        None
+    };
+    app.satellites.list_state.get_mut().select(index);
 
     Ok(())
 }
