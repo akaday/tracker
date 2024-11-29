@@ -15,6 +15,20 @@ use crate::{app::App, object::Object};
 
 use super::Component;
 
+pub struct Item {
+    pub satellite: Satellite,
+    selected: bool,
+}
+
+impl From<Satellite> for Item {
+    fn from(satellite: Satellite) -> Self {
+        Self {
+            satellite,
+            selected: false,
+        }
+    }
+}
+
 pub struct Satellites {
     pub objects: Vec<Object>,
 
@@ -24,13 +38,8 @@ pub struct Satellites {
     area: Cell<Rect>,
 }
 
-pub struct Item {
-    pub satellite: Satellite,
-    selected: bool,
-}
-
 impl Satellites {
-    fn update_objects(&mut self) {
+    pub fn update_objects(&mut self) {
         let mut objects = Vec::new();
         for item in &self.items {
             if !item.selected {
@@ -88,8 +97,7 @@ impl Component for Satellites {
 
 impl Default for Satellites {
     fn default() -> Self {
-        let mut items = Vec::new();
-        for satellite in [
+        let satellites = [
             Satellite::Css,
             Satellite::Iss,
             Satellite::Weather,
@@ -110,20 +118,13 @@ impl Default for Satellites {
             Satellite::Military,
             Satellite::RadarCalibration,
             Satellite::CubeSats,
-        ] {
-            items.push(Item {
-                satellite,
-                selected: false,
-            });
-        }
-        let mut instance = Self {
+        ];
+        Self {
             objects: Vec::new(),
-            items,
+            items: satellites.into_iter().map(Item::from).collect(),
             list_state: Default::default(),
             area: Default::default(),
-        };
-        instance.update_objects();
-        instance
+        }
     }
 }
 
