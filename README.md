@@ -1,6 +1,6 @@
 # tracker
 
-A satellite ground track TUI.
+A terminal-based real-time satellite tracking and orbit prediction application.
 
 <p align="center"><img src="docs/screenshot.png" width=80%></p>
 
