@@ -94,7 +94,7 @@ impl Object {
             .constants
             .propagate(sgp4::MinutesSinceEpoch(minutes_since_epoch))?;
 
-        let gmst = calculate_gmst(calculate_julian_date(time));
+        let gmst = gmst_from_julian_days(julian_days_from_utc(time));
         let (lat, lon, alt) = ecef_to_lat_lon_alt(teme_to_ecef(prediction.position, gmst));
 
         assert!((-90.0..=90.0).contains(&lat), "Latitude out of range");
@@ -131,8 +131,8 @@ impl State {
     }
 }
 
-/// Returns the Julian date for the given UTC datetime.
-fn calculate_julian_date(datetime: DateTime<Utc>) -> f64 {
+/// Returns the Julian days for the given UTC datetime.
+fn julian_days_from_utc(datetime: DateTime<Utc>) -> f64 {
     let year = datetime.year();
     let month = datetime.month() as i32;
     let day = datetime.day() as i32;
@@ -159,12 +159,12 @@ fn calculate_julian_date(datetime: DateTime<Utc>) -> f64 {
 /// Calculates the Greenwich Mean Sidereal Time (GMST) in radians.
 ///
 /// # Arguments
-/// * `julian_date` - The Julian date for which to calculate GMST
+/// * `julian_days` - The Julian days for which to calculate GMST
 ///
 /// # Returns
 ///
 /// The GMST in radians, normalized to [0, 2π]
-fn calculate_gmst(julian_date: f64) -> f64 {
+fn gmst_from_julian_days(julian_days: f64) -> f64 {
     // Constants
     const J2000_EPOCH: f64 = 2451545.0; // Julian Date for J2000.0 epoch
     const JULIAN_CENTURY: f64 = 36525.0; // Days in a Julian century
@@ -176,11 +176,11 @@ fn calculate_gmst(julian_date: f64) -> f64 {
     const T3_COEFF: f64 = -1.0 / 38710000.0;
 
     // Calculate time in Julian centuries since J2000.0
-    let t = (julian_date - J2000_EPOCH) / JULIAN_CENTURY;
+    let t = (julian_days - J2000_EPOCH) / JULIAN_CENTURY;
 
     // Calculate GMST in degrees
     let gmst = GMST_MEAN
-        + GMST_ADVANCE * (julian_date - J2000_EPOCH)
+        + GMST_ADVANCE * (julian_days - J2000_EPOCH)
         + T2_COEFF * t.powi(2)
         + T3_COEFF * t.powi(3);
 
