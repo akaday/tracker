@@ -67,7 +67,7 @@ impl<B: Backend> Tui<B> {
 
             let track_map = TrackMap {
                 satellites_state: &app.satellites_state,
-                satellit_markder: "+".to_string(),
+                satellit_symbol: "+".to_string(),
             };
             frame.render_stateful_widget(track_map, left, &mut app.track_map_state);
 

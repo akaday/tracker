@@ -5,7 +5,6 @@ use ratatui::{
     buffer::Buffer,
     layout::{Margin, Position, Rect},
     style::{Color, Stylize},
-    symbols::Marker,
     widgets::{
         canvas::{Canvas, Line, Map, MapResolution},
         Block, StatefulWidget, Widget,
@@ -18,7 +17,7 @@ use super::satellites::SatellitesState;
 
 pub struct TrackMap<'a> {
     pub satellites_state: &'a SatellitesState,
-    pub satellit_markder: String,
+    pub satellit_symbol: String,
 }
 
 #[derive(Default)]
@@ -35,7 +34,6 @@ impl StatefulWidget for TrackMap<'_> {
 
         let bottom_layer = Canvas::default()
             .block(Block::bordered().title("Satellite ground track".blue()))
-            .marker(Marker::Braille)
             .paint(|ctx| {
                 // Draw the world map
                 ctx.draw(&Map {
@@ -46,10 +44,10 @@ impl StatefulWidget for TrackMap<'_> {
                 // Draw each satellite's current position
                 for object in self.satellites_state.objects.iter() {
                     let line = if state.selected_object.is_none() {
-                        self.satellit_markder.clone().light_red()
+                        self.satellit_symbol.clone().light_red()
                             + format!(" {}", object.name()).white()
                     } else {
-                        self.satellit_markder.clone().red()
+                        self.satellit_symbol.clone().red()
                             + format!(" {}", object.name()).dark_gray()
                     };
                     let state = object.predict(Utc::now()).unwrap();
@@ -91,7 +89,7 @@ impl StatefulWidget for TrackMap<'_> {
                     ctx.print(
                         state.position[0],
                         state.position[1],
-                        self.satellit_markder.clone().light_green().rapid_blink()
+                        self.satellit_symbol.clone().light_green().slow_blink()
                             + format!(" {}", selected.name()).white(),
                     );
                 }
