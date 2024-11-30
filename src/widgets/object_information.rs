@@ -24,8 +24,8 @@ pub struct ObjectInformation<'a> {
 }
 
 pub struct ObjectInformationState {
+    pub items: Vec<(&'static str, String)>,
     pub table_state: TableState,
-    pub table_size: usize,
     pub area: Rect,
     geocoder: ReverseGeocoder,
 }
@@ -33,8 +33,8 @@ pub struct ObjectInformationState {
 impl Default for ObjectInformationState {
     fn default() -> Self {
         Self {
+            items: Default::default(),
             table_state: Default::default(),
-            table_size: Default::default(),
             area: Default::default(),
             geocoder: ReverseGeocoder::new(),
         }
@@ -60,7 +60,7 @@ impl StatefulWidget for ObjectInformation<'_> {
                 .unwrap()
                 .name();
 
-            let items = [
+            state.items = Vec::from([
                 ("Name", object.name().clone()),
                 ("COSPAR ID", object.cospar_id().clone()),
                 ("NORAD ID", object.norad_id().to_string()),
@@ -86,12 +86,12 @@ impl StatefulWidget for ObjectInformation<'_> {
                 ("M. anomaly", object.mean_anomaly().to_string()),
                 ("M. motion", object.mean_motion().to_string()),
                 ("Rev. #", object.revolution_number().to_string()),
-            ];
-            state.table_size = items.len();
+            ]);
 
             let inner_area = area.inner(Margin::new(1, 1));
 
-            let (max_key_width, _max_value_width) = items
+            let (max_key_width, _max_value_width) = state
+                .items
                 .iter()
                 .map(|(key, value)| (key.width() as u16, value.width() as u16))
                 .fold((0, 0), |acc, (key_width, value_width)| {
@@ -104,7 +104,7 @@ impl StatefulWidget for ObjectInformation<'_> {
                 .map(|rect| rect.width);
             let right = right.saturating_sub(1);
 
-            let rows = items.iter().enumerate().map(|(i, (key, value))| {
+            let rows = state.items.iter().enumerate().map(|(i, (key, value))| {
                 let color = match i % 2 {
                     0 => tailwind::SLATE.c950,
                     _ => tailwind::SLATE.c900,
@@ -129,7 +129,7 @@ impl StatefulWidget for ObjectInformation<'_> {
 
             let inner_area = area.inner(Margin::new(0, 1));
             let mut scrollbar_state =
-                ScrollbarState::new(items.len().saturating_sub(inner_area.height as usize))
+                ScrollbarState::new(state.items.len().saturating_sub(inner_area.height as usize))
                     .position(state.table_state.offset());
             Scrollbar::default().render(area, buf, &mut scrollbar_state);
         } else {
@@ -154,7 +154,8 @@ pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
         MouseEventKind::ScrollDown => {
             let max_offset = app
                 .object_information_state
-                .table_size
+                .items
+                .len()
                 .saturating_sub(inner_area.height as usize);
             *app.object_information_state.table_state.offset_mut() =
                 (*app.object_information_state.table_state.offset_mut() + 1).min(max_offset);
@@ -170,7 +171,7 @@ pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
     }
     let row =
         (event.row - inner_area.y) as usize + app.object_information_state.table_state.offset();
-    let index = if row < app.object_information_state.table_size {
+    let index = if row < app.object_information_state.items.len() {
         Some(row)
     } else {
         None
@@ -178,22 +179,4 @@ pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
     app.object_information_state.table_state.select(index);
 
     Ok(())
-}
-
-#[allow(dead_code)]
-fn format_longitude(longitude: f64) -> String {
-    if longitude >= 0.0 {
-        format!("{:.5}°E", longitude)
-    } else {
-        format!("{:.5}°W", longitude.abs())
-    }
-}
-
-#[allow(dead_code)]
-fn format_latitude(latitude: f64) -> String {
-    if latitude >= 0.0 {
-        format!("{:.5}°N", latitude)
-    } else {
-        format!("{:.5}°S", latitude.abs())
-    }
 }
