@@ -1,40 +1,39 @@
-use std::cell::RefCell;
-
-use anyhow::{Ok, Result};
+use anyhow::Result;
 use chrono::Utc;
 use crossterm::event::{MouseEvent, MouseEventKind};
 use ratatui::{
+    buffer::Buffer,
     layout::{Constraint, Layout, Margin, Position, Rect},
     style::{palette::tailwind, Modifier, Style, Stylize},
     text::Text,
-    widgets::{Block, Cell, Paragraph, Row, Scrollbar, ScrollbarState, Table, TableState, Wrap},
-    Frame,
+    widgets::{
+        Block, Cell, Paragraph, Row, Scrollbar, ScrollbarState, StatefulWidget, Table, TableState,
+        Widget, Wrap,
+    },
 };
 use reverse_geocoder::ReverseGeocoder;
 use unicode_width::UnicodeWidthStr;
 
 use crate::app::App;
 
-use super::Component;
+use super::{satellites::SatellitesState, track_map::TrackMapState};
 
-pub struct ObjectInformation {
-    pub table_state: RefCell<TableState>,
-    pub table_size: std::cell::Cell<usize>,
+pub struct ObjectInformation<'a> {
+    pub satellites_state: &'a SatellitesState,
+    pub track_map_state: &'a TrackMapState,
+}
 
-    area: std::cell::Cell<Rect>,
+pub struct ObjectInformationState {
+    pub table_state: TableState,
+    pub table_size: usize,
+    pub area: Rect,
     geocoder: ReverseGeocoder,
 }
 
-impl ObjectInformation {
-    pub fn area(&self) -> Rect {
-        self.area.get()
-    }
-}
-
-impl Default for ObjectInformation {
+impl Default for ObjectInformationState {
     fn default() -> Self {
         Self {
-            table_state: RefCell::new(TableState::default().with_selected(0)),
+            table_state: Default::default(),
             table_size: Default::default(),
             area: Default::default(),
             geocoder: ReverseGeocoder::new(),
@@ -42,16 +41,20 @@ impl Default for ObjectInformation {
     }
 }
 
-impl Component for ObjectInformation {
-    fn render(&self, app: &App, frame: &mut Frame, area: Rect) -> Result<()> {
-        self.area.set(area);
+impl StatefulWidget for ObjectInformation<'_> {
+    type State = ObjectInformationState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        state.area = area;
 
         let block = Block::bordered().title("Object information".blue());
-        if let Some(index) = app.track_map.selected_object {
-            let object = &app.satellites.objects[index];
-            let state = object.predict(Utc::now()).unwrap();
+        if let Some(index) = self.track_map_state.selected_object {
+            let object = &self.satellites_state.objects[index];
+            let object_state = object.predict(Utc::now()).unwrap();
 
-            let result = self.geocoder.search((state.latitude(), state.longitude()));
+            let result = state
+                .geocoder
+                .search((object_state.latitude(), object_state.longitude()));
             let city = result.record.name.clone();
             let country = isocountry::CountryCode::for_alpha2(&result.record.cc)
                 .unwrap()
@@ -61,10 +64,10 @@ impl Component for ObjectInformation {
                 ("Name", object.name().clone()),
                 ("COSPAR ID", object.cospar_id().clone()),
                 ("NORAD ID", object.norad_id().to_string()),
-                ("Longitude", format!("{:10.5}", state.longitude())),
-                ("Latitude", format!("{:10.5}", state.latitude())),
-                ("Altitude", format!("{:.5} km", state.altitude())),
-                ("Speed", format!("{:.2} km/s", state.speed())),
+                ("Longitude", format!("{:10.5}", object_state.longitude())),
+                ("Latitude", format!("{:10.5}", object_state.latitude())),
+                ("Altitude", format!("{:.5} km", object_state.altitude())),
+                ("Speed", format!("{:.2} km/s", object_state.speed())),
                 ("Location", format!("{}, {}", city, country)),
                 ("Epoch", object.epoch().to_string()),
                 (
@@ -84,7 +87,7 @@ impl Component for ObjectInformation {
                 ("M. motion", object.mean_motion().to_string()),
                 ("Rev. #", object.revolution_number().to_string()),
             ];
-            self.table_size.set(items.len());
+            state.table_size = items.len();
 
             let inner_area = area.inner(Margin::new(1, 1));
 
@@ -122,64 +125,57 @@ impl Component for ObjectInformation {
             let table = Table::new(rows, widths)
                 .block(block)
                 .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED));
-
-            frame.render_stateful_widget(table, area, &mut self.table_state.borrow_mut());
+            StatefulWidget::render(table, area, buf, &mut state.table_state);
 
             let inner_area = area.inner(Margin::new(0, 1));
-            frame.render_stateful_widget(
-                Scrollbar::default(),
-                inner_area,
-                &mut ScrollbarState::new(items.len().saturating_sub(inner_area.height as usize))
-                    .position(self.table_state.borrow().offset()),
-            );
+            let mut scrollbar_state =
+                ScrollbarState::new(items.len().saturating_sub(inner_area.height as usize))
+                    .position(state.table_state.offset());
+            Scrollbar::default().render(area, buf, &mut scrollbar_state);
         } else {
             let paragraph = Paragraph::new("No object selected".dark_gray())
                 .block(block)
                 .centered()
                 .wrap(Wrap { trim: true });
 
-            frame.render_widget(paragraph, area);
+            paragraph.render(area, buf);
         }
-
-        Ok(())
     }
 }
 
 pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
-    let inner_area = app.object_information.area().inner(Margin::new(1, 1));
+    let inner_area = app.object_information_state.area.inner(Margin::new(1, 1));
     if !inner_area.contains(Position::new(event.column, event.row)) {
-        app.object_information.table_state.get_mut().select(None);
+        app.object_information_state.table_state.select(None);
         return Ok(());
     }
 
     match event.kind {
         MouseEventKind::ScrollDown => {
             let max_offset = app
-                .object_information
+                .object_information_state
                 .table_size
-                .get()
                 .saturating_sub(inner_area.height as usize);
-            *app.object_information.table_state.get_mut().offset_mut() =
-                (*app.object_information.table_state.get_mut().offset_mut() + 1).min(max_offset);
+            *app.object_information_state.table_state.offset_mut() =
+                (*app.object_information_state.table_state.offset_mut() + 1).min(max_offset);
         }
         MouseEventKind::ScrollUp => {
-            *app.object_information.table_state.get_mut().offset_mut() = app
-                .object_information
+            *app.object_information_state.table_state.offset_mut() = app
+                .object_information_state
                 .table_state
-                .get_mut()
                 .offset()
                 .saturating_sub(1);
         }
         _ => {}
     }
     let row =
-        (event.row - inner_area.y) as usize + app.object_information.table_state.get_mut().offset();
-    let index = if row < app.object_information.table_size.get() {
+        (event.row - inner_area.y) as usize + app.object_information_state.table_state.offset();
+    let index = if row < app.object_information_state.table_size {
         Some(row)
     } else {
         None
     };
-    app.object_information.table_state.get_mut().select(index);
+    app.object_information_state.table_state.select(index);
 
     Ok(())
 }

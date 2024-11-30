@@ -1,40 +1,37 @@
-use std::cell::Cell;
-
 use anyhow::Result;
 use chrono::{Duration, Utc};
 use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::{
+    buffer::Buffer,
     layout::{Margin, Position, Rect},
     style::{Color, Stylize},
     symbols::Marker,
     widgets::{
         canvas::{Canvas, Line, Map, MapResolution},
-        Block,
+        Block, StatefulWidget, Widget,
     },
-    Frame,
 };
 
 use crate::app::App;
 
-use super::Component;
+use super::satellites::SatellitesState;
+
+pub struct TrackMap<'a> {
+    pub satellites_state: &'a SatellitesState,
+    pub satellit_markder: String,
+}
 
 #[derive(Default)]
-pub struct TrackMap {
+pub struct TrackMapState {
     pub selected_object: Option<usize>,
-    area: Cell<Rect>,
+    pub area: Rect,
 }
 
-impl TrackMap {
-    pub fn area(&self) -> Rect {
-        self.area.get()
-    }
-}
+impl StatefulWidget for TrackMap<'_> {
+    type State = TrackMapState;
 
-impl Component for TrackMap {
-    fn render(&self, app: &App, frame: &mut Frame, area: Rect) -> Result<()> {
-        const SATELLITE_SYMBOL: &str = "+";
-
-        self.area.set(area);
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        state.area = area;
 
         let bottom_layer = Canvas::default()
             .block(Block::bordered().title("Satellite ground track".blue()))
@@ -47,11 +44,13 @@ impl Component for TrackMap {
                 });
 
                 // Draw each satellite's current position
-                for object in &app.satellites.objects {
-                    let line = if self.selected_object.is_none() {
-                        SATELLITE_SYMBOL.light_red() + format!(" {}", object.name()).white()
+                for object in self.satellites_state.objects.iter() {
+                    let line = if state.selected_object.is_none() {
+                        self.satellit_markder.clone().light_red()
+                            + format!(" {}", object.name()).white()
                     } else {
-                        SATELLITE_SYMBOL.red() + format!(" {}", object.name()).dark_gray()
+                        self.satellit_markder.clone().red()
+                            + format!(" {}", object.name()).dark_gray()
                     };
                     let state = object.predict(Utc::now()).unwrap();
                     ctx.print(state.position[0], state.position[1], line);
@@ -61,10 +60,9 @@ impl Component for TrackMap {
             .y_bounds([-90.0, 90.0]);
 
         let top_layer = Canvas::default()
-            .marker(Marker::Braille)
             .paint(|ctx| {
-                if let Some(selected_object_index) = self.selected_object {
-                    let selected = &app.satellites.objects[selected_object_index];
+                if let Some(selected_object_index) = state.selected_object {
+                    let selected = &self.satellites_state.objects[selected_object_index];
                     let state = selected.predict(Utc::now()).unwrap();
 
                     // Calculate future positions along the trajectory
@@ -93,7 +91,7 @@ impl Component for TrackMap {
                     ctx.print(
                         state.position[0],
                         state.position[1],
-                        SATELLITE_SYMBOL.light_green().rapid_blink()
+                        self.satellit_markder.clone().light_green().rapid_blink()
                             + format!(" {}", selected.name()).white(),
                     );
                 }
@@ -101,15 +99,13 @@ impl Component for TrackMap {
             .x_bounds([-180.0, 180.0])
             .y_bounds([-90.0, 90.0]);
 
-        frame.render_widget(bottom_layer, area);
-        frame.render_widget(top_layer, area.inner(Margin::new(1, 1)));
-
-        Ok(())
+        bottom_layer.render(area, buf);
+        top_layer.render(area.inner(Margin::new(1, 1)), buf);
     }
 }
 
 pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
-    let area = app.track_map.area();
+    let area = app.track_map_state.area;
     if !area.contains(Position::new(event.column, event.row)) {
         return Ok(());
     }
@@ -124,23 +120,23 @@ pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
                 let lat = 90.0 - y * 180.0;
 
                 // Find the nearest object
-                if let Some((index, _)) =
-                    app.satellites
-                        .objects
-                        .iter()
-                        .enumerate()
-                        .min_by_key(|(_, obj)| {
-                            let state = obj.predict(Utc::now()).unwrap();
-                            let dx = state.longitude() - lon;
-                            let dy = state.latitude() - lat;
-                            ((dx * dx + dy * dy) * 1000.0) as i32
-                        })
+                if let Some((index, _)) = app
+                    .satellites_state
+                    .objects
+                    .iter()
+                    .enumerate()
+                    .min_by_key(|(_, obj)| {
+                        let state = obj.predict(Utc::now()).unwrap();
+                        let dx = state.longitude() - lon;
+                        let dy = state.latitude() - lat;
+                        ((dx * dx + dy * dy) * 1000.0) as i32
+                    })
                 {
-                    app.track_map.selected_object = Some(index);
+                    app.track_map_state.selected_object = Some(index);
                 }
             }
             MouseButton::Right => {
-                app.track_map.selected_object = None;
+                app.track_map_state.selected_object = None;
             }
             _ => {}
         }

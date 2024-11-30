@@ -1,7 +1,7 @@
 use crate::{
     app::{App, AppResult},
-    components::Component,
     event::EventHandler,
+    widgets::{object_information::ObjectInformation, satellites::Satellites, track_map::TrackMap},
 };
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
@@ -63,11 +63,23 @@ impl<B: Backend> Tui<B> {
             let vertical = Layout::vertical([Constraint::Percentage(60), Constraint::Fill(1)]);
             let [top_right, bottom_right] = vertical.areas(right);
 
-            app.track_map.render(app, frame, left).unwrap();
-            app.object_information
-                .render(app, frame, top_right)
-                .unwrap();
-            app.satellites.render(app, frame, bottom_right).unwrap();
+            frame.render_stateful_widget(Satellites, bottom_right, &mut app.satellites_state);
+
+            let track_map = TrackMap {
+                satellites_state: &app.satellites_state,
+                satellit_markder: "+".to_string(),
+            };
+            frame.render_stateful_widget(track_map, left, &mut app.track_map_state);
+
+            let object_information = ObjectInformation {
+                satellites_state: &app.satellites_state,
+                track_map_state: &app.track_map_state,
+            };
+            frame.render_stateful_widget(
+                object_information,
+                top_right,
+                &mut app.object_information_state,
+            );
         })?;
         Ok(())
     }

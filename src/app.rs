@@ -1,8 +1,9 @@
 use std::error;
 use std::time::{Duration, Instant};
 
-use crate::components::{
-    object_information::ObjectInformation, satellites::Satellites, track_map::TrackMap,
+use crate::widgets::{
+    object_information::ObjectInformationState, satellites::SatellitesState,
+    track_map::TrackMapState,
 };
 
 /// Application result type.
@@ -13,21 +14,18 @@ pub struct App {
     /// Is the application running?
     pub running: bool,
 
-    pub track_map: TrackMap,
-    pub object_information: ObjectInformation,
-    pub satellites: Satellites,
-
-    last_object_update: Instant,
+    pub track_map_state: TrackMapState,
+    pub satellites_state: SatellitesState,
+    pub object_information_state: ObjectInformationState,
 }
 
 impl Default for App {
     fn default() -> Self {
         Self {
             running: true,
-            track_map: TrackMap::default(),
-            object_information: ObjectInformation::default(),
-            satellites: Satellites::default(),
-            last_object_update: Instant::now(),
+            track_map_state: Default::default(),
+            satellites_state: Default::default(),
+            object_information_state: Default::default(),
         }
     }
 }
@@ -42,9 +40,9 @@ impl App {
     pub fn tick(&mut self) {
         const OBJECT_UPDATE_INTERVAL: Duration = Duration::from_secs(2 * 60);
         let now = Instant::now();
-        if now.duration_since(self.last_object_update) >= OBJECT_UPDATE_INTERVAL {
-            self.satellites.update_objects();
-            self.last_object_update = now;
+        if now.duration_since(self.satellites_state.last_object_update) >= OBJECT_UPDATE_INTERVAL {
+            self.satellites_state.update_objects();
+            self.satellites_state.last_object_update = now;
         }
     }
 

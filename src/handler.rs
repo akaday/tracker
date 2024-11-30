@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 
 use crate::{
     app::{App, AppResult},
-    components::{object_information, satellites, track_map},
+    widgets::{object_information, satellites, track_map},
 };
 
 pub fn handle_key_events(event: KeyEvent, app: &mut App) -> AppResult<()> {
