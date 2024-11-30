@@ -12,10 +12,11 @@ sgp4 = "2.2"
 reverse_geocoder = "4.1"
 isocountry = "0.3"
 ureq = { version = "2.11", features = ["json"] }
+unicode-width = "0.2"
+strum = { version = "0.26.3", features = ["derive"] }
+arboard = "3.4"
 
 ratatui = "0.29"
 crossterm = { version = "0.28", features = ["event-stream"] }
 tokio = { version = "1.41", features = ["full"] }
 futures = "0.3"
-unicode-width = "0.2"
-strum = { version = "0.26.3", features = ["derive"] }

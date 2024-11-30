@@ -1,6 +1,7 @@
 use anyhow::Result;
+use arboard::Clipboard;
 use chrono::Utc;
-use crossterm::event::{MouseEvent, MouseEventKind};
+use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Margin, Position, Rect},
@@ -151,6 +152,13 @@ pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
     }
 
     match event.kind {
+        MouseEventKind::Down(MouseButton::Left) => {
+            if let Some(index) = app.object_information_state.table_state.selected() {
+                let mut clipboard = Clipboard::new().unwrap();
+                let value = app.object_information_state.items[index].1.clone();
+                clipboard.set_text(value).unwrap();
+            }
+        }
         MouseEventKind::ScrollDown => {
             let max_offset = app
                 .object_information_state
