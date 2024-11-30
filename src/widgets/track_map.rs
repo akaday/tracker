@@ -18,6 +18,7 @@ use super::satellites::SatellitesState;
 pub struct TrackMap<'a> {
     pub satellites_state: &'a SatellitesState,
     pub satellit_symbol: String,
+    pub trajectory_color: Color,
 }
 
 #[derive(Default)]
@@ -78,11 +79,11 @@ impl StatefulWidget for TrackMap<'_> {
                         // Handle trajectory crossing the international date line
                         if (x1 - x2).abs() >= 180.0 {
                             let x_edge = if x1 > 0.0 { 180.0 } else { -180.0 };
-                            ctx.draw(&Line::new(x1, y1, x_edge, y2, Color::LightBlue));
-                            ctx.draw(&Line::new(-x_edge, y1, x2, y2, Color::LightBlue));
+                            ctx.draw(&Line::new(x1, y1, x_edge, y2, self.trajectory_color));
+                            ctx.draw(&Line::new(-x_edge, y1, x2, y2, self.trajectory_color));
                             continue;
                         }
-                        ctx.draw(&Line::new(x1, y1, x2, y2, Color::LightBlue));
+                        ctx.draw(&Line::new(x1, y1, x2, y2, self.trajectory_color));
                     }
 
                     // Highlight the selected satellite's current position
