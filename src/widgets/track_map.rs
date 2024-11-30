@@ -42,7 +42,7 @@ impl StatefulWidget for TrackMap<'_> {
                     resolution: MapResolution::High,
                 });
 
-                // Draw each satellite's current position
+                // Draw satellites
                 for object in self.satellites_state.objects.iter() {
                     let line = if state.selected_object.is_none() {
                         self.satellit_symbol.clone().light_red()
@@ -86,7 +86,7 @@ impl StatefulWidget for TrackMap<'_> {
                         ctx.draw(&Line::new(x1, y1, x2, y2, self.trajectory_color));
                     }
 
-                    // Highlight the selected satellite's current position
+                    // Highlight the selected satellite
                     ctx.print(
                         state.position[0],
                         state.position[1],
@@ -104,35 +104,17 @@ impl StatefulWidget for TrackMap<'_> {
 }
 
 pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
-    let area = app.track_map_state.area;
-    if !area.contains(Position::new(event.column, event.row)) {
+    let inner_area = app.track_map_state.area.inner(Margin::new(1, 1));
+    if !inner_area.contains(Position::new(event.column, event.row)) {
         return Ok(());
     }
+
+    let mouse = Position::new(event.column - inner_area.x, event.row - inner_area.y);
 
     if let MouseEventKind::Down(buttom) = event.kind {
         match buttom {
             MouseButton::Left => {
-                // Convert mouse coordinates to latitude and longitude
-                let x = (event.column as f64 - area.left() as f64) / area.width as f64;
-                let y = (event.row as f64 - area.top() as f64) / area.height as f64;
-                let lon = -180.0 + x * 360.0;
-                let lat = 90.0 - y * 180.0;
-
-                // Find the nearest object
-                if let Some((index, _)) = app
-                    .satellites_state
-                    .objects
-                    .iter()
-                    .enumerate()
-                    .min_by_key(|(_, obj)| {
-                        let state = obj.predict(Utc::now()).unwrap();
-                        let dx = state.longitude() - lon;
-                        let dy = state.latitude() - lat;
-                        ((dx * dx + dy * dy) * 1000.0) as i32
-                    })
-                {
-                    app.track_map_state.selected_object = Some(index);
-                }
+                app.track_map_state.selected_object = get_nearest_object(app, mouse.x, mouse.y);
             }
             MouseButton::Right => {
                 app.track_map_state.selected_object = None;
@@ -142,4 +124,38 @@ pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn get_nearest_object(app: &mut App, x: u16, y: u16) -> Option<usize> {
+    app.satellites_state
+        .objects
+        .iter()
+        .enumerate()
+        .min_by_key(|(_, obj)| {
+            let state = obj.predict(Utc::now()).unwrap();
+            let (obj_x, obj_y) = lon_lat_to_area(
+                state.longitude(),
+                state.latitude(),
+                app.track_map_state.area.inner(Margin::new(1, 1)),
+            );
+            let dx = obj_x as i16 - x as i16;
+            let dy = obj_y as i16 - y as i16;
+            dx * dx + dy * dy
+        })
+        .map(|(index, _)| index)
+}
+
+#[allow(dead_code)]
+fn area_to_lon_lat(x: u16, y: u16, area: Rect) -> (f64, f64) {
+    let normalized_x = (x + 1) as f64 / area.width as f64;
+    let normalized_y = (y + 1) as f64 / area.height as f64;
+    let lon = -180.0 + normalized_x * 360.0;
+    let lat = 90.0 - normalized_y * 180.0;
+    (lon, lat)
+}
+
+fn lon_lat_to_area(lon: f64, lat: f64, area: Rect) -> (u16, u16) {
+    let x = ((lon + 180.0) * area.width as f64 / 360.0) - 1.0;
+    let y = ((90.0 - lat) * area.height as f64 / 180.0) - 1.0;
+    (x.round() as u16, y.round() as u16)
 }
