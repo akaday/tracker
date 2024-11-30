@@ -84,7 +84,7 @@ impl StatefulWidget for Satellites {
         let mut scrollbar_state =
             ScrollbarState::new(state.items.len().saturating_sub(inner_area.height as usize))
                 .position(state.list_state.offset());
-        Scrollbar::default().render(area, buf, &mut scrollbar_state);
+        Scrollbar::default().render(inner_area, buf, &mut scrollbar_state);
     }
 }
 

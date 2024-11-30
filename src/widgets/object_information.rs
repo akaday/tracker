@@ -132,7 +132,7 @@ impl StatefulWidget for ObjectInformation<'_> {
             let mut scrollbar_state =
                 ScrollbarState::new(state.items.len().saturating_sub(inner_area.height as usize))
                     .position(state.table_state.offset());
-            Scrollbar::default().render(area, buf, &mut scrollbar_state);
+            Scrollbar::default().render(inner_area, buf, &mut scrollbar_state);
         } else {
             let paragraph = Paragraph::new("No object selected".dark_gray())
                 .block(block)
