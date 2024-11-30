@@ -65,12 +65,10 @@ impl StatefulWidget for ObjectInformation<'_> {
                 ("Name", object.name().clone()),
                 ("COSPAR ID", object.cospar_id().clone()),
                 ("NORAD ID", object.norad_id().to_string()),
-                ("Longitude", format!("{:10.5}", object_state.longitude())),
-                ("Latitude", format!("{:10.5}", object_state.latitude())),
-                ("Altitude", format!("{:.5} km", object_state.altitude())),
+                ("Longitude", format!("{:9.4}°", object_state.longitude())),
+                ("Latitude", format!("{:9.4}°", object_state.latitude())),
+                ("Altitude", format!("{:.3} km", object_state.altitude())),
                 ("Speed", format!("{:.2} km/s", object_state.speed())),
-                ("Location", format!("{}, {}", city, country)),
-                ("Epoch", object.epoch().to_string()),
                 (
                     "Period",
                     format!(
@@ -81,10 +79,15 @@ impl StatefulWidget for ObjectInformation<'_> {
                         object.orbital_period().num_seconds() as f64 / 60.0
                     ),
                 ),
-                ("Inc", object.inclination().to_string()),
-                ("R.A.", object.right_ascension().to_string()),
+                ("Location", format!("{}, {}", city, country)),
+                (
+                    "Epoch",
+                    object.epoch().format("%Y-%m-%d %H:%M:%S").to_string(),
+                ),
+                ("Inc", format!("{}°", object.inclination())),
+                ("RAAN", format!("{}°", object.right_ascension())),
                 ("Ecc", object.eccentricity().to_string()),
-                ("M. anomaly", object.mean_anomaly().to_string()),
+                ("M. anomaly", format!("{}°", object.mean_anomaly())),
                 ("M. motion", object.mean_motion().to_string()),
                 ("Rev. #", object.revolution_number().to_string()),
             ]);
@@ -94,12 +97,12 @@ impl StatefulWidget for ObjectInformation<'_> {
             let (max_key_width, _max_value_width) = state
                 .items
                 .iter()
-                .map(|(key, value)| (key.width() as u16, value.width() as u16))
+                .map(|(key, value)| (key.width(), value.width()))
                 .fold((0, 0), |acc, (key_width, value_width)| {
                     (acc.0.max(key_width), acc.1.max(value_width))
                 });
 
-            let widths = [Constraint::Max(max_key_width), Constraint::Fill(1)];
+            let widths = [Constraint::Max(max_key_width as u16), Constraint::Fill(1)];
             let [_left, right] = Layout::horizontal(widths)
                 .areas(inner_area)
                 .map(|rect| rect.width);
@@ -111,7 +114,8 @@ impl StatefulWidget for ObjectInformation<'_> {
                     _ => tailwind::SLATE.c900,
                 };
                 let value = if value.width() as u16 > right {
-                    value[..right as usize - 3.min(right as usize)].to_string() + "..."
+                    let etc = "…";
+                    value[..right as usize - etc.width().min(right as usize)].to_string() + etc
                 } else {
                     value.to_string()
                 };
