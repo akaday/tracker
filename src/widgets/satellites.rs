@@ -22,7 +22,7 @@ pub struct SatellitesState {
     pub items: Vec<Item>,
     pub list_state: ListState,
 
-    pub area: Rect,
+    pub inner_area: Rect,
 
     pub last_object_update: Instant,
 }
@@ -49,7 +49,7 @@ impl Default for SatellitesState {
             objects: Vec::new(),
             items: Satellite::iter().map(Item::from).collect(),
             list_state: Default::default(),
-            area: Default::default(),
+            inner_area: Default::default(),
             last_object_update: Instant::now(),
         }
     }
@@ -59,7 +59,7 @@ impl StatefulWidget for Satellites {
     type State = SatellitesState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        state.area = area;
+        state.inner_area = area.inner(Margin::new(1, 1));
 
         let items = state.items.iter().map(|item| {
             let style = if item.selected {
@@ -105,7 +105,7 @@ impl From<Satellite> for Item {
 }
 
 pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
-    let inner_area = app.satellites_state.area.inner(Margin::new(1, 1));
+    let inner_area = app.satellites_state.inner_area;
     if !inner_area.contains(Position::new(event.column, event.row)) {
         app.satellites_state.list_state.select(None);
         return Ok(());

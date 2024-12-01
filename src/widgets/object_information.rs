@@ -27,7 +27,7 @@ pub struct ObjectInformation<'a> {
 pub struct ObjectInformationState {
     pub items: Vec<(&'static str, String)>,
     pub table_state: TableState,
-    pub area: Rect,
+    pub inner_area: Rect,
     geocoder: ReverseGeocoder,
 }
 
@@ -36,7 +36,7 @@ impl Default for ObjectInformationState {
         Self {
             items: Default::default(),
             table_state: Default::default(),
-            area: Default::default(),
+            inner_area: Default::default(),
             geocoder: ReverseGeocoder::new(),
         }
     }
@@ -46,7 +46,7 @@ impl StatefulWidget for ObjectInformation<'_> {
     type State = ObjectInformationState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        state.area = area;
+        state.inner_area = area.inner(Margin::new(1, 1));
 
         let block = Block::bordered().title("Object information".blue());
         if let Some(index) = self.track_map_state.selected_object {
@@ -92,8 +92,6 @@ impl StatefulWidget for ObjectInformation<'_> {
                 ("Rev. #", object.revolution_number().to_string()),
             ]);
 
-            let inner_area = area.inner(Margin::new(1, 1));
-
             let (max_key_width, _max_value_width) = state
                 .items
                 .iter()
@@ -104,7 +102,7 @@ impl StatefulWidget for ObjectInformation<'_> {
 
             let widths = [Constraint::Max(max_key_width as u16), Constraint::Fill(1)];
             let [_left, right] = Layout::horizontal(widths)
-                .areas(inner_area)
+                .areas(state.inner_area)
                 .map(|rect| rect.width);
             let right = right.saturating_sub(1) as usize;
 
@@ -155,7 +153,7 @@ impl StatefulWidget for ObjectInformation<'_> {
 }
 
 pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
-    let inner_area = app.object_information_state.area.inner(Margin::new(1, 1));
+    let inner_area = app.object_information_state.inner_area;
     if !inner_area.contains(Position::new(event.column, event.row)) {
         app.object_information_state.table_state.select(None);
         return Ok(());

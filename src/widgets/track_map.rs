@@ -25,14 +25,14 @@ pub struct TrackMap<'a> {
 pub struct TrackMapState {
     pub selected_object: Option<usize>,
     pub hovered_object: Option<usize>,
-    pub area: Rect,
+    pub inner_area: Rect,
 }
 
 impl StatefulWidget for TrackMap<'_> {
     type State = TrackMapState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        state.area = area;
+        state.inner_area = area.inner(Margin::new(1, 1));
 
         let bottom_layer = Canvas::default()
             .block(Block::bordered().title("Satellite ground track".blue()))
@@ -116,12 +116,12 @@ impl StatefulWidget for TrackMap<'_> {
             .y_bounds([-90.0, 90.0]);
 
         bottom_layer.render(area, buf);
-        top_layer.render(area.inner(Margin::new(1, 1)), buf);
+        top_layer.render(state.inner_area, buf);
     }
 }
 
 pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
-    let inner_area = app.track_map_state.area.inner(Margin::new(1, 1));
+    let inner_area = app.track_map_state.inner_area;
     if !inner_area.contains(Position::new(event.column, event.row)) {
         app.track_map_state.hovered_object = None;
         return Ok(());
@@ -154,8 +154,7 @@ fn get_nearest_object(app: &mut App, x: u16, y: u16) -> Option<usize> {
         .enumerate()
         .min_by_key(|(_, obj)| {
             let state = obj.predict(Utc::now()).unwrap();
-            let (lon, lat) =
-                area_to_lon_lat(x, y, app.track_map_state.area.inner(Margin::new(1, 1)));
+            let (lon, lat) = area_to_lon_lat(x, y, app.track_map_state.inner_area);
             let dx = state.longitude() - lon;
             let dy = state.latitude() - lat;
             ((dx * dx + dy * dy) * 1000.0) as i32
