@@ -113,8 +113,8 @@ impl Object {
         let gmst = gmst_from_julian_days(julian_days_from_utc(time));
         let [lat, lon, alt] = ecef_to_lat_lon_alt(teme_to_ecef(prediction.position, gmst));
 
-        assert!((-90.0..=90.0).contains(&lat), "Latitude out of range");
-        assert!((-180.0..=180.0).contains(&lon), "Longitude out of range");
+        debug_assert!((-90.0..=90.0).contains(&lat), "latitude out of range");
+        debug_assert!((-180.0..=180.0).contains(&lon), "longitude out of range");
 
         Ok(State {
             position: [lon, lat, alt],

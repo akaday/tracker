@@ -178,6 +178,8 @@ fn get_nearest_object(app: &mut App, x: u16, y: u16) -> Option<usize> {
 
 /// Convert area coordinates to lon/lat coordinates
 fn area_to_lon_lat(x: u16, y: u16, area: Rect) -> (f64, f64) {
+    debug_assert!(x < area.width && y < area.height);
+
     let normalized_x = (x + 1) as f64 / area.width as f64;
     let normalized_y = (y + 1) as f64 / area.height as f64;
     let lon = -180.0 + normalized_x * 360.0;
@@ -188,6 +190,9 @@ fn area_to_lon_lat(x: u16, y: u16, area: Rect) -> (f64, f64) {
 #[allow(dead_code)]
 /// Convert lon/lat coordinates to area coordinates
 fn lon_lat_to_area(lon: f64, lat: f64, area: Rect) -> (u16, u16) {
+    debug_assert!((-180.0..=180.0).contains(&lon));
+    debug_assert!((-90.0..=90.0).contains(&lat));
+
     let x = ((lon + 180.0) * area.width as f64 / 360.0) - 1.0;
     let y = ((90.0 - lat) * area.height as f64 / 180.0) - 1.0;
     (x.round() as u16, y.round() as u16)
