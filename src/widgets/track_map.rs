@@ -127,6 +127,7 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()>
         return Ok(());
     }
 
+    // Convert window coordinates to area coordinates
     let mouse = Position::new(event.column - inner_area.x, event.row - inner_area.y);
 
     if let MouseEventKind::Down(buttom) = event.kind {
@@ -145,6 +146,7 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()>
     Ok(())
 }
 
+/// Get the index of the nearest object to the given area coordinates
 fn get_nearest_object(app: &mut App, x: u16, y: u16) -> Option<usize> {
     app.satellites_state
         .objects
@@ -161,6 +163,7 @@ fn get_nearest_object(app: &mut App, x: u16, y: u16) -> Option<usize> {
         .map(|(index, _)| index)
 }
 
+/// Convert area coordinates to lon/lat coordinates
 fn area_to_lon_lat(x: u16, y: u16, area: Rect) -> (f64, f64) {
     let normalized_x = (x + 1) as f64 / area.width as f64;
     let normalized_y = (y + 1) as f64 / area.height as f64;
@@ -170,6 +173,7 @@ fn area_to_lon_lat(x: u16, y: u16, area: Rect) -> (f64, f64) {
 }
 
 #[allow(dead_code)]
+/// Convert lon/lat coordinates to area coordinates
 fn lon_lat_to_area(lon: f64, lat: f64, area: Rect) -> (u16, u16) {
     let x = ((lon + 180.0) * area.width as f64 / 360.0) - 1.0;
     let y = ((90.0 - lat) * area.height as f64 / 180.0) - 1.0;

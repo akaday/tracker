@@ -137,6 +137,7 @@ impl StatefulWidget for ObjectInformation<'_> {
                 .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED));
             StatefulWidget::render(table, area, buf, &mut state.table_state);
 
+            // Render the scrollbar.
             let inner_area = area.inner(Margin::new(0, 1));
             let mut scrollbar_state =
                 ScrollbarState::new(state.items.len().saturating_sub(inner_area.height as usize))
@@ -162,6 +163,7 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()>
 
     match event.kind {
         MouseEventKind::Down(MouseButton::Left) => {
+            // Copy the clicked value to the clipboard.
             if let Some(index) = app.object_information_state.table_state.selected() {
                 let mut clipboard = Clipboard::new().unwrap();
                 let value = app.object_information_state.items[index].1.clone();
@@ -186,6 +188,7 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()>
         }
         _ => {}
     }
+    // Highlight the hovered row.
     let row =
         (event.row - inner_area.y) as usize + app.object_information_state.table_state.offset();
     let index = if row < app.object_information_state.items.len() {

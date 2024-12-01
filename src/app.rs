@@ -7,7 +7,7 @@ use crate::widgets::{
 
 /// Application.
 pub struct App {
-    /// Is the application running?
+    /// Indicates if the application is currently active and running. When set to false, triggers application shutdown.
     pub running: bool,
 
     pub track_map_state: TrackMapState,

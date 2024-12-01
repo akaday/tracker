@@ -28,6 +28,7 @@ pub struct SatellitesState {
 }
 
 impl SatellitesState {
+    /// Update the objects based on the selected satellites.
     pub fn update_objects(&mut self) {
         let mut objects = Vec::new();
         for item in &self.items {
@@ -80,6 +81,7 @@ impl StatefulWidget for Satellites {
 
         list.render(area, buf, &mut state.list_state);
 
+        // Render the scrollbar.
         let inner_area = area.inner(Margin::new(0, 1));
         let mut scrollbar_state =
             ScrollbarState::new(state.items.len().saturating_sub(inner_area.height as usize))
@@ -111,6 +113,7 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()>
 
     match event.kind {
         MouseEventKind::Down(MouseButton::Left) => {
+            // Select the clicked item.
             if let Some(index) = app.satellites_state.list_state.selected() {
                 app.satellites_state.items[index].selected =
                     !app.satellites_state.items[index].selected;
@@ -134,6 +137,7 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()>
         }
         _ => {}
     }
+    // Highlight the hovered item.
     let row = (event.row - inner_area.y) as usize + app.satellites_state.list_state.offset();
     let index = if row < app.satellites_state.items.len() {
         Some(row)
