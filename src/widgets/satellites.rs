@@ -102,7 +102,7 @@ impl From<Satellite> for Item {
     }
 }
 
-pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
+pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
     let inner_area = app.satellites_state.area.inner(Margin::new(1, 1));
     if !inner_area.contains(Position::new(event.column, event.row)) {
         app.satellites_state.list_state.select(None);

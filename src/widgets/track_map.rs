@@ -120,7 +120,7 @@ impl StatefulWidget for TrackMap<'_> {
     }
 }
 
-pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
+pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
     let inner_area = app.track_map_state.area.inner(Margin::new(1, 1));
     if !inner_area.contains(Position::new(event.column, event.row)) {
         app.track_map_state.hovered_object = None;

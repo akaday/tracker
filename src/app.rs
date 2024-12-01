@@ -1,13 +1,9 @@
-use std::error;
 use std::time::{Duration, Instant};
 
 use crate::widgets::{
     object_information::ObjectInformationState, satellites::SatellitesState,
     track_map::TrackMapState,
 };
-
-/// Application result type.
-pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
 /// Application.
 pub struct App {

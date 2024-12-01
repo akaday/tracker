@@ -1,8 +1,6 @@
-use crate::{
-    app::{App, AppResult},
-    event::EventHandler,
-    widgets::{object_information::ObjectInformation, satellites::Satellites, track_map::TrackMap},
-};
+use std::{io, panic};
+
+use anyhow::Result;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
@@ -13,7 +11,12 @@ use ratatui::{
     style::Color,
     Terminal,
 };
-use std::{io, panic};
+
+use crate::{
+    app::App,
+    event::EventHandler,
+    widgets::{object_information::ObjectInformation, satellites::Satellites, track_map::TrackMap},
+};
 
 /// Representation of a terminal user interface.
 ///
@@ -36,7 +39,7 @@ impl<B: Backend> Tui<B> {
     /// Initializes the terminal interface.
     ///
     /// It enables the raw mode and sets terminal properties.
-    pub fn init(&mut self) -> AppResult<()> {
+    pub fn init(&mut self) -> Result<()> {
         terminal::enable_raw_mode()?;
         crossterm::execute!(io::stdout(), EnterAlternateScreen, EnableMouseCapture)?;
 
@@ -57,7 +60,7 @@ impl<B: Backend> Tui<B> {
     ///
     /// [`Draw`]: ratatui::Terminal::draw
     /// [`rendering`]: crate::ui::render
-    pub fn render(&mut self, app: &mut App) -> AppResult<()> {
+    pub fn render(&mut self, app: &mut App) -> Result<()> {
         self.terminal.draw(|frame| {
             let horizontal = Layout::horizontal([Constraint::Percentage(80), Constraint::Min(25)]);
             let [left, right] = horizontal.areas(frame.area());
@@ -90,7 +93,7 @@ impl<B: Backend> Tui<B> {
     ///
     /// This function is also used for the panic hook to revert
     /// the terminal properties if unexpected errors occur.
-    fn reset() -> AppResult<()> {
+    fn reset() -> Result<()> {
         terminal::disable_raw_mode()?;
         crossterm::execute!(io::stdout(), LeaveAlternateScreen, DisableMouseCapture)?;
         Ok(())
@@ -99,7 +102,7 @@ impl<B: Backend> Tui<B> {
     /// Exits the terminal interface.
     ///
     /// It disables the raw mode and reverts back the terminal properties.
-    pub fn exit(&mut self) -> AppResult<()> {
+    pub fn exit(&mut self) -> Result<()> {
         Self::reset()?;
         self.terminal.show_cursor()?;
         Ok(())

@@ -1,9 +1,10 @@
 use std::io;
 
+use anyhow::Result;
 use ratatui::{backend::CrosstermBackend, Terminal};
 
 use crate::{
-    app::{App, AppResult},
+    app::App,
     event::{Event, EventHandler},
     handler::{handle_key_events, handle_mouse_events},
     tui::Tui,
@@ -18,7 +19,7 @@ pub mod tui;
 pub mod widgets;
 
 #[tokio::main]
-async fn main() -> AppResult<()> {
+async fn main() -> Result<()> {
     // Create an application.
     let mut app = App::new();
 
@@ -36,8 +37,8 @@ async fn main() -> AppResult<()> {
         // Handle events.
         match tui.events.next().await? {
             Event::Tick => app.tick(),
-            Event::Key(event) => handle_key_events(event, &mut app)?,
-            Event::Mouse(event) => handle_mouse_events(event, &mut app)?,
+            Event::Key(event) => handle_key_events(event, &mut app).await?,
+            Event::Mouse(event) => handle_mouse_events(event, &mut app).await?,
             Event::Resize(_, _) => {}
         }
     }
