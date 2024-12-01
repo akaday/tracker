@@ -30,16 +30,18 @@ pub struct SatellitesState {
 impl SatellitesState {
     /// Update the objects based on the selected satellites.
     pub fn update_objects(&mut self) {
-        let mut objects = Vec::new();
-        for item in &self.items {
+        self.objects.clear();
+        for item in &mut self.items {
             if !item.selected {
                 continue;
             }
-            for elements in item.satellite.get_elements() {
-                objects.push(Object::from_elements(elements));
+            if let Some(elements) = item.satellite.get_elements() {
+                self.objects
+                    .extend(elements.into_iter().map(Object::from_elements));
+            } else {
+                item.selected = false;
             }
         }
-        self.objects = objects;
     }
 }
 
