@@ -9,6 +9,8 @@ pub struct Object {
     norad_id: u64,
 
     epoch: DateTime<Utc>,
+
+    drag_term: f64,
     inclination: f64,
     right_ascension: f64,
     eccentricity: f64,
@@ -27,6 +29,7 @@ impl Object {
             cospar_id: elements.international_designator.as_ref().unwrap().clone(),
             norad_id: elements.norad_id,
             epoch: DateTime::from_naive_utc_and_offset(elements.datetime, Utc),
+            drag_term: elements.drag_term,
             inclination: elements.inclination,
             right_ascension: elements.right_ascension,
             eccentricity: elements.eccentricity,
@@ -50,34 +53,47 @@ impl Object {
         self.norad_id
     }
 
+    /// The UTC timestamp of the elements
     pub fn epoch(&self) -> DateTime<Utc> {
         self.epoch
     }
 
+    /// Radiation pressure coefficient in earth radii⁻¹
+    pub fn drag_term(&self) -> f64 {
+        self.drag_term
+    }
+
+    /// Angle between the equator and the orbit plane in deg
     pub fn inclination(&self) -> f64 {
         self.inclination
     }
 
+    /// Angle between vernal equinox and the point where the orbit crosses the equatorial plane in deg
     pub fn right_ascension(&self) -> f64 {
         self.right_ascension
     }
 
+    /// The shape of the orbit
     pub fn eccentricity(&self) -> f64 {
         self.eccentricity
     }
 
+    /// Angle between the ascending node and the orbit's point of closest approach to the earth in deg
     pub fn argument_of_perigee(&self) -> f64 {
         self.argument_of_perigee
     }
 
+    /// Angle of the satellite location measured from perigee in deg
     pub fn mean_anomaly(&self) -> f64 {
         self.mean_anomaly
     }
 
+    /// Mean number of orbits per day in day⁻¹ (Kozai convention)
     pub fn mean_motion(&self) -> f64 {
         self.mean_motion
     }
 
+    /// The orbit number at epoch
     pub fn revolution_number(&self) -> u64 {
         self.revolution_number
     }
