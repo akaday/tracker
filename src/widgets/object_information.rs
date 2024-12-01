@@ -106,16 +106,21 @@ impl StatefulWidget for ObjectInformation<'_> {
             let [_left, right] = Layout::horizontal(widths)
                 .areas(inner_area)
                 .map(|rect| rect.width);
-            let right = right.saturating_sub(1);
+            let right = right.saturating_sub(1) as usize;
 
             let rows = state.items.iter().enumerate().map(|(i, (key, value))| {
                 let color = match i % 2 {
                     0 => tailwind::SLATE.c950,
                     _ => tailwind::SLATE.c900,
                 };
-                let value = if value.width() as u16 > right {
+                let value = if value.width() > right {
                     let etc = "…";
-                    value[..right as usize - etc.width().min(right as usize)].to_string() + etc
+                    let end = value
+                        .char_indices()
+                        .map(|(i, _)| i)
+                        .nth(right.saturating_sub(etc.width()))
+                        .unwrap();
+                    value[..end].to_string() + etc
                 } else {
                     value.to_string()
                 };
