@@ -72,10 +72,7 @@ impl StatefulWidget for ObjectInformation<'_> {
                 (
                     "Period",
                     format!(
-                        "{} hr {} min {} ({:.2} min)",
-                        object.orbital_period().num_hours(),
-                        object.orbital_period().num_minutes() % 60,
-                        object.orbital_period().num_seconds() % 60,
+                        "{:.2} min",
                         object.orbital_period().num_seconds() as f64 / 60.0
                     ),
                 ),
@@ -84,11 +81,12 @@ impl StatefulWidget for ObjectInformation<'_> {
                     "Epoch",
                     object.epoch().format("%Y-%m-%d %H:%M:%S").to_string(),
                 ),
+                ("Drag term", format!("{} 1/ER", object.drag_term())),
                 ("Inc", format!("{}°", object.inclination())),
-                ("RAAN", format!("{}°", object.right_ascension())),
+                ("Right asc.", format!("{}°", object.right_ascension())),
                 ("Ecc", object.eccentricity().to_string()),
                 ("M. anomaly", format!("{}°", object.mean_anomaly())),
-                ("M. motion", object.mean_motion().to_string()),
+                ("M. motion", format!("{} 1/day", object.mean_motion())),
                 ("Rev. #", object.revolution_number().to_string()),
             ]);
 
