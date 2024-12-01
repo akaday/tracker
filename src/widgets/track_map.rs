@@ -28,14 +28,14 @@ pub struct TrackMapState {
     pub inner_area: Rect,
 }
 
-impl StatefulWidget for TrackMap<'_> {
-    type State = TrackMapState;
+impl TrackMap<'_> {
+    fn block(&self) -> Block<'static> {
+        Block::bordered().title("Satellite ground track".blue())
+    }
 
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        state.inner_area = area.inner(Margin::new(1, 1));
-
+    fn render_bottom_layer(&self, area: Rect, buf: &mut Buffer, state: &mut TrackMapState) {
         let bottom_layer = Canvas::default()
-            .block(Block::bordered().title("Satellite ground track".blue()))
+            .block(self.block())
             .paint(|ctx| {
                 // Draw the world map
                 ctx.draw(&Map {
@@ -59,6 +59,10 @@ impl StatefulWidget for TrackMap<'_> {
             .x_bounds([-180.0, 180.0])
             .y_bounds([-90.0, 90.0]);
 
+        bottom_layer.render(area, buf);
+    }
+
+    fn render_top_layer(&self, buf: &mut Buffer, state: &mut TrackMapState) {
         let top_layer = Canvas::default()
             .paint(|ctx| {
                 if let Some(selected_object_index) = state.selected_object {
@@ -115,8 +119,18 @@ impl StatefulWidget for TrackMap<'_> {
             .x_bounds([-180.0, 180.0])
             .y_bounds([-90.0, 90.0]);
 
-        bottom_layer.render(area, buf);
         top_layer.render(state.inner_area, buf);
+    }
+}
+
+impl StatefulWidget for TrackMap<'_> {
+    type State = TrackMapState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        state.inner_area = area.inner(Margin::new(1, 1));
+
+        self.render_bottom_layer(area, buf, state);
+        self.render_top_layer(buf, state);
     }
 }
 

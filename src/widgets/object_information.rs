@@ -42,110 +42,131 @@ impl Default for ObjectInformationState {
     }
 }
 
+impl ObjectInformation<'_> {
+    fn block(&self) -> Block<'static> {
+        Block::bordered().title("Object information".blue())
+    }
+
+    fn render_table(
+        &self,
+        area: Rect,
+        buf: &mut Buffer,
+        state: &mut ObjectInformationState,
+        index: usize,
+    ) {
+        let object = &self.satellites_state.objects[index];
+        let object_state = object.predict(Utc::now()).unwrap();
+
+        let result = state
+            .geocoder
+            .search((object_state.latitude(), object_state.longitude()));
+        let city = result.record.name.clone();
+        let country = isocountry::CountryCode::for_alpha2(&result.record.cc)
+            .unwrap()
+            .name();
+
+        state.items = Vec::from([
+            ("Name", object.name().clone()),
+            ("COSPAR ID", object.cospar_id().clone()),
+            ("NORAD ID", object.norad_id().to_string()),
+            ("Longitude", format!("{:9.4}°", object_state.longitude())),
+            ("Latitude", format!("{:9.4}°", object_state.latitude())),
+            ("Altitude", format!("{:.3} km", object_state.altitude())),
+            ("Speed", format!("{:.2} km/s", object_state.speed())),
+            (
+                "Period",
+                format!(
+                    "{:.2} min",
+                    object.orbital_period().num_seconds() as f64 / 60.0
+                ),
+            ),
+            ("Location", format!("{}, {}", city, country)),
+            (
+                "Epoch",
+                object.epoch().format("%Y-%m-%d %H:%M:%S").to_string(),
+            ),
+            ("Drag term", format!("{} 1/ER", object.drag_term())),
+            ("Inc", format!("{}°", object.inclination())),
+            ("Right asc.", format!("{}°", object.right_ascension())),
+            ("Ecc", object.eccentricity().to_string()),
+            ("M. anomaly", format!("{}°", object.mean_anomaly())),
+            ("M. motion", format!("{} 1/day", object.mean_motion())),
+            ("Rev. #", object.revolution_number().to_string()),
+        ]);
+
+        let (max_key_width, _max_value_width) = state
+            .items
+            .iter()
+            .map(|(key, value)| (key.width(), value.width()))
+            .fold((0, 0), |acc, (key_width, value_width)| {
+                (acc.0.max(key_width), acc.1.max(value_width))
+            });
+
+        let widths = [Constraint::Max(max_key_width as u16), Constraint::Fill(1)];
+        let [_left, right] = Layout::horizontal(widths)
+            .areas(state.inner_area)
+            .map(|rect| rect.width);
+        let right = right.saturating_sub(1) as usize;
+
+        let rows = state.items.iter().enumerate().map(|(i, (key, value))| {
+            let color = match i % 2 {
+                0 => tailwind::SLATE.c950,
+                _ => tailwind::SLATE.c900,
+            };
+            let value = if value.width() > right {
+                let etc = "…";
+                let end = value
+                    .char_indices()
+                    .map(|(i, _)| i)
+                    .nth(right.saturating_sub(etc.width()))
+                    .unwrap();
+                value[..end].to_string() + etc
+            } else {
+                value.to_string()
+            };
+            Row::new([
+                Cell::from(Text::from(key.bold())),
+                Cell::from(Text::from(value)),
+            ])
+            .style(Style::new().bg(color))
+            .height(1)
+        });
+
+        let table = Table::new(rows, widths)
+            .block(self.block())
+            .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED));
+        StatefulWidget::render(table, area, buf, &mut state.table_state);
+    }
+
+    fn render_scrollbar(&self, area: Rect, buf: &mut Buffer, state: &mut ObjectInformationState) {
+        let inner_area = area.inner(Margin::new(0, 1));
+        let mut scrollbar_state =
+            ScrollbarState::new(state.items.len().saturating_sub(inner_area.height as usize))
+                .position(state.table_state.offset());
+        Scrollbar::default().render(inner_area, buf, &mut scrollbar_state);
+    }
+
+    fn render_no_object_selected(&self, area: Rect, buf: &mut Buffer) {
+        let paragraph = Paragraph::new("No object selected".dark_gray())
+            .block(self.block())
+            .centered()
+            .wrap(Wrap { trim: true });
+
+        paragraph.render(area, buf);
+    }
+}
+
 impl StatefulWidget for ObjectInformation<'_> {
     type State = ObjectInformationState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         state.inner_area = area.inner(Margin::new(1, 1));
 
-        let block = Block::bordered().title("Object information".blue());
         if let Some(index) = self.track_map_state.selected_object {
-            let object = &self.satellites_state.objects[index];
-            let object_state = object.predict(Utc::now()).unwrap();
-
-            let result = state
-                .geocoder
-                .search((object_state.latitude(), object_state.longitude()));
-            let city = result.record.name.clone();
-            let country = isocountry::CountryCode::for_alpha2(&result.record.cc)
-                .unwrap()
-                .name();
-
-            state.items = Vec::from([
-                ("Name", object.name().clone()),
-                ("COSPAR ID", object.cospar_id().clone()),
-                ("NORAD ID", object.norad_id().to_string()),
-                ("Longitude", format!("{:9.4}°", object_state.longitude())),
-                ("Latitude", format!("{:9.4}°", object_state.latitude())),
-                ("Altitude", format!("{:.3} km", object_state.altitude())),
-                ("Speed", format!("{:.2} km/s", object_state.speed())),
-                (
-                    "Period",
-                    format!(
-                        "{:.2} min",
-                        object.orbital_period().num_seconds() as f64 / 60.0
-                    ),
-                ),
-                ("Location", format!("{}, {}", city, country)),
-                (
-                    "Epoch",
-                    object.epoch().format("%Y-%m-%d %H:%M:%S").to_string(),
-                ),
-                ("Drag term", format!("{} 1/ER", object.drag_term())),
-                ("Inc", format!("{}°", object.inclination())),
-                ("Right asc.", format!("{}°", object.right_ascension())),
-                ("Ecc", object.eccentricity().to_string()),
-                ("M. anomaly", format!("{}°", object.mean_anomaly())),
-                ("M. motion", format!("{} 1/day", object.mean_motion())),
-                ("Rev. #", object.revolution_number().to_string()),
-            ]);
-
-            let (max_key_width, _max_value_width) = state
-                .items
-                .iter()
-                .map(|(key, value)| (key.width(), value.width()))
-                .fold((0, 0), |acc, (key_width, value_width)| {
-                    (acc.0.max(key_width), acc.1.max(value_width))
-                });
-
-            let widths = [Constraint::Max(max_key_width as u16), Constraint::Fill(1)];
-            let [_left, right] = Layout::horizontal(widths)
-                .areas(state.inner_area)
-                .map(|rect| rect.width);
-            let right = right.saturating_sub(1) as usize;
-
-            let rows = state.items.iter().enumerate().map(|(i, (key, value))| {
-                let color = match i % 2 {
-                    0 => tailwind::SLATE.c950,
-                    _ => tailwind::SLATE.c900,
-                };
-                let value = if value.width() > right {
-                    let etc = "…";
-                    let end = value
-                        .char_indices()
-                        .map(|(i, _)| i)
-                        .nth(right.saturating_sub(etc.width()))
-                        .unwrap();
-                    value[..end].to_string() + etc
-                } else {
-                    value.to_string()
-                };
-                Row::new([
-                    Cell::from(Text::from(key.bold())),
-                    Cell::from(Text::from(value)),
-                ])
-                .style(Style::new().bg(color))
-                .height(1)
-            });
-
-            let table = Table::new(rows, widths)
-                .block(block)
-                .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED));
-            StatefulWidget::render(table, area, buf, &mut state.table_state);
-
-            // Render the scrollbar.
-            let inner_area = area.inner(Margin::new(0, 1));
-            let mut scrollbar_state =
-                ScrollbarState::new(state.items.len().saturating_sub(inner_area.height as usize))
-                    .position(state.table_state.offset());
-            Scrollbar::default().render(inner_area, buf, &mut scrollbar_state);
+            self.render_table(area, buf, state, index);
+            self.render_scrollbar(area, buf, state);
         } else {
-            let paragraph = Paragraph::new("No object selected".dark_gray())
-                .block(block)
-                .centered()
-                .wrap(Wrap { trim: true });
-
-            paragraph.render(area, buf);
+            self.render_no_object_selected(area, buf);
         }
     }
 }

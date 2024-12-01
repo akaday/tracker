@@ -57,12 +57,12 @@ impl Default for SatellitesState {
     }
 }
 
-impl StatefulWidget for Satellites {
-    type State = SatellitesState;
+impl Satellites {
+    fn block(&self) -> Block<'static> {
+        Block::bordered().title("Satellites".blue())
+    }
 
-    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        state.inner_area = area.inner(Margin::new(1, 1));
-
+    fn render_list(&self, area: Rect, buf: &mut Buffer, state: &mut SatellitesState) {
         let items = state.items.iter().map(|item| {
             let style = if item.selected {
                 Style::default().fg(Color::White)
@@ -78,17 +78,29 @@ impl StatefulWidget for Satellites {
         });
 
         let list = List::new(items)
-            .block(Block::bordered().title("Satellites".blue()))
+            .block(self.block())
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED));
 
         list.render(area, buf, &mut state.list_state);
+    }
 
-        // Render the scrollbar.
+    fn render_scrollbar(&self, area: Rect, buf: &mut Buffer, state: &mut SatellitesState) {
         let inner_area = area.inner(Margin::new(0, 1));
         let mut scrollbar_state =
             ScrollbarState::new(state.items.len().saturating_sub(inner_area.height as usize))
                 .position(state.list_state.offset());
         Scrollbar::default().render(inner_area, buf, &mut scrollbar_state);
+    }
+}
+
+impl StatefulWidget for Satellites {
+    type State = SatellitesState;
+
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        state.inner_area = area.inner(Margin::new(1, 1));
+
+        self.render_list(area, buf, state);
+        self.render_scrollbar(area, buf, state);
     }
 }
 
