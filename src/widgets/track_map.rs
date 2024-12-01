@@ -24,6 +24,7 @@ pub struct TrackMap<'a> {
 #[derive(Default)]
 pub struct TrackMapState {
     pub selected_object: Option<usize>,
+    pub hovered_object: Option<usize>,
     pub area: Rect,
 }
 
@@ -97,6 +98,18 @@ impl StatefulWidget for TrackMap<'_> {
                         self.satellit_symbol.clone().light_green().slow_blink()
                             + format!(" {}", selected.name()).white(),
                     );
+                } else if let Some(hovered_object_index) = state.hovered_object {
+                    let hovered = &self.satellites_state.objects[hovered_object_index];
+                    let state = hovered.predict(Utc::now()).unwrap();
+
+                    // Highlight the hovered satellite
+                    ctx.print(
+                        state.position[0],
+                        state.position[1],
+                        self.satellit_symbol.clone().light_red().reversed()
+                            + " ".into()
+                            + hovered.name().clone().white().reversed(),
+                    );
                 }
             })
             .x_bounds([-180.0, 180.0])
@@ -110,6 +123,7 @@ impl StatefulWidget for TrackMap<'_> {
 pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
     let inner_area = app.track_map_state.area.inner(Margin::new(1, 1));
     if !inner_area.contains(Position::new(event.column, event.row)) {
+        app.track_map_state.hovered_object = None;
         return Ok(());
     }
 
@@ -126,6 +140,7 @@ pub fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
             _ => {}
         }
     }
+    app.track_map_state.hovered_object = get_nearest_object(app, mouse.x, mouse.y);
 
     Ok(())
 }
