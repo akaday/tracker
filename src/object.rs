@@ -111,7 +111,7 @@ impl Object {
             .propagate(sgp4::MinutesSinceEpoch(minutes_since_epoch))?;
 
         let gmst = gmst_from_julian_days(julian_days_from_utc(time));
-        let (lat, lon, alt) = ecef_to_lat_lon_alt(teme_to_ecef(prediction.position, gmst));
+        let [lat, lon, alt] = ecef_to_lat_lon_alt(teme_to_ecef(prediction.position, gmst));
 
         assert!((-90.0..=90.0).contains(&lat), "Latitude out of range");
         assert!((-180.0..=180.0).contains(&lon), "Longitude out of range");
@@ -213,7 +213,7 @@ fn gmst_from_julian_days(julian_days: f64) -> f64 {
 /// # Returns
 /// A 3D position vector [x, y, z] in the ECEF frame (same units as input)
 fn teme_to_ecef(position: [f64; 3], gmst: f64) -> [f64; 3] {
-    let (x, y, z) = (position[0], position[1], position[2]);
+    let [x, y, z] = position;
     let cos_gmst = gmst.cos();
     let sin_gmst = gmst.sin();
 
@@ -232,12 +232,12 @@ fn teme_to_ecef(position: [f64; 3], gmst: f64) -> [f64; 3] {
 ///   - latitude: Geodetic latitude in degrees (-90° to +90°)
 ///   - longitude: Geodetic longitude in degrees (-180° to +180°)
 ///   - altitude: Height above WGS84 ellipsoid in kilometers
-fn ecef_to_lat_lon_alt(position: [f64; 3]) -> (f64, f64, f64) {
+fn ecef_to_lat_lon_alt(position: [f64; 3]) -> [f64; 3] {
     const A: f64 = 6378.137; // WGS84 Earth semi-major axis (km)
     const F: f64 = 1.0 / 298.257223563; // Flattening
     const B: f64 = A * (1.0 - F); // Semi-minor axis (km)
 
-    let (x, y, z) = (position[0], position[1], position[2]);
+    let [x, y, z] = position;
 
     // Calculate longitude
     let longitude = y.atan2(x).to_degrees();
@@ -256,5 +256,5 @@ fn ecef_to_lat_lon_alt(position: [f64; 3]) -> (f64, f64, f64) {
     let n = A / (1.0 - e2 * latitude.to_radians().sin().powi(2)).sqrt();
     let altitude = p / latitude.to_radians().cos() - n;
 
-    (latitude, longitude, altitude)
+    [latitude, longitude, altitude]
 }
