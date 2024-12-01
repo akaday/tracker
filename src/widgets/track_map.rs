@@ -133,19 +133,15 @@ fn get_nearest_object(app: &mut App, x: u16, y: u16) -> Option<usize> {
         .enumerate()
         .min_by_key(|(_, obj)| {
             let state = obj.predict(Utc::now()).unwrap();
-            let (obj_x, obj_y) = lon_lat_to_area(
-                state.longitude(),
-                state.latitude(),
-                app.track_map_state.area.inner(Margin::new(1, 1)),
-            );
-            let dx = obj_x as i16 - x as i16;
-            let dy = obj_y as i16 - y as i16;
-            dx * dx + dy * dy
+            let (lon, lat) =
+                area_to_lon_lat(x, y, app.track_map_state.area.inner(Margin::new(1, 1)));
+            let dx = state.longitude() - lon;
+            let dy = state.latitude() - lat;
+            ((dx * dx + dy * dy) * 1000.0) as i32
         })
         .map(|(index, _)| index)
 }
 
-#[allow(dead_code)]
 fn area_to_lon_lat(x: u16, y: u16, area: Rect) -> (f64, f64) {
     let normalized_x = (x + 1) as f64 / area.width as f64;
     let normalized_y = (y + 1) as f64 / area.height as f64;
@@ -154,6 +150,7 @@ fn area_to_lon_lat(x: u16, y: u16, area: Rect) -> (f64, f64) {
     (lon, lat)
 }
 
+#[allow(dead_code)]
 fn lon_lat_to_area(lon: f64, lat: f64, area: Rect) -> (u16, u16) {
     let x = ((lon + 180.0) * area.width as f64 / 360.0) - 1.0;
     let y = ((90.0 - lat) * area.height as f64 / 180.0) - 1.0;
