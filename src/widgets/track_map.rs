@@ -83,6 +83,10 @@ impl StatefulWidget for TrackMap<'_> {
                             ctx.draw(&Line::new(-x_edge, y1, x2, y2, self.trajectory_color));
                             continue;
                         }
+                        if (y1 - y2).abs() >= 90.0 {
+                            // TEMPSAT 1 (1512), CALSPHERE 4A (1520)
+                            continue;
+                        }
                         ctx.draw(&Line::new(x1, y1, x2, y2, self.trajectory_color));
                     }
 
