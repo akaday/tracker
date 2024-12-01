@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
             Event::Tick => app.tick(),
             Event::Key(event) => handle_key_events(event, &mut app).await?,
             Event::Mouse(event) => handle_mouse_events(event, &mut app).await?,
-            Event::Resize(_, _) => {}
+            _ => {}
         }
     }
 
