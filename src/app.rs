@@ -1,8 +1,15 @@
 use std::time::{Duration, Instant};
 
+use ratatui::{
+    layout::{Constraint, Layout},
+    style::Color,
+    Frame,
+};
+
 use crate::widgets::{
-    object_information::ObjectInformationState, satellites::SatellitesState,
-    track_map::TrackMapState,
+    object_information::{ObjectInformation, ObjectInformationState},
+    satellites::{Satellites, SatellitesState},
+    track_map::{TrackMap, TrackMapState},
 };
 
 /// Application.
@@ -30,6 +37,32 @@ impl App {
     /// Constructs a new instance of [`App`].
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn render(&mut self, frame: &mut Frame) {
+        let horizontal = Layout::horizontal([Constraint::Percentage(80), Constraint::Min(25)]);
+        let [left, right] = horizontal.areas(frame.area());
+        let vertical = Layout::vertical([Constraint::Percentage(60), Constraint::Fill(1)]);
+        let [top_right, bottom_right] = vertical.areas(right);
+
+        frame.render_stateful_widget(Satellites, bottom_right, &mut self.satellites_state);
+
+        let track_map = TrackMap {
+            satellites_state: &self.satellites_state,
+            satellit_symbol: "+".to_string(),
+            trajectory_color: Color::LightBlue,
+        };
+        frame.render_stateful_widget(track_map, left, &mut self.track_map_state);
+
+        let object_information = ObjectInformation {
+            satellites_state: &self.satellites_state,
+            track_map_state: &self.track_map_state,
+        };
+        frame.render_stateful_widget(
+            object_information,
+            top_right,
+            &mut self.object_information_state,
+        );
     }
 
     /// Handles the tick event of the terminal.

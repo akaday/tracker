@@ -5,18 +5,9 @@ use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::Backend,
-    layout::{Constraint, Layout},
-    style::Color,
-    Terminal,
-};
+use ratatui::{backend::Backend, Terminal};
 
-use crate::{
-    app::App,
-    event::EventHandler,
-    widgets::{object_information::ObjectInformation, satellites::Satellites, track_map::TrackMap},
-};
+use crate::{app::App, event::EventHandler};
 
 /// Representation of a terminal user interface.
 ///
@@ -61,31 +52,7 @@ impl<B: Backend> Tui<B> {
     /// [`Draw`]: ratatui::Terminal::draw
     /// [`rendering`]: crate::ui::render
     pub fn render(&mut self, app: &mut App) -> Result<()> {
-        self.terminal.draw(|frame| {
-            let horizontal = Layout::horizontal([Constraint::Percentage(80), Constraint::Min(25)]);
-            let [left, right] = horizontal.areas(frame.area());
-            let vertical = Layout::vertical([Constraint::Percentage(60), Constraint::Fill(1)]);
-            let [top_right, bottom_right] = vertical.areas(right);
-
-            frame.render_stateful_widget(Satellites, bottom_right, &mut app.satellites_state);
-
-            let track_map = TrackMap {
-                satellites_state: &app.satellites_state,
-                satellit_symbol: "+".to_string(),
-                trajectory_color: Color::LightBlue,
-            };
-            frame.render_stateful_widget(track_map, left, &mut app.track_map_state);
-
-            let object_information = ObjectInformation {
-                satellites_state: &app.satellites_state,
-                track_map_state: &app.track_map_state,
-            };
-            frame.render_stateful_widget(
-                object_information,
-                top_right,
-                &mut app.object_information_state,
-            );
-        })?;
+        self.terminal.draw(|frame| app.render(frame))?;
         Ok(())
     }
 
