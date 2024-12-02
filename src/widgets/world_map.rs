@@ -15,25 +15,25 @@ use crate::app::App;
 
 use super::satellites::SatellitesState;
 
-pub struct TrackMap<'a> {
+pub struct WorldMap<'a> {
     pub satellites_state: &'a SatellitesState,
     pub satellit_symbol: String,
     pub trajectory_color: Color,
 }
 
 #[derive(Default)]
-pub struct TrackMapState {
+pub struct WorldMapState {
     pub selected_object: Option<usize>,
     pub hovered_object: Option<usize>,
     pub inner_area: Rect,
 }
 
-impl TrackMap<'_> {
+impl WorldMap<'_> {
     fn block(&self) -> Block<'static> {
-        Block::bordered().title("Satellite ground track".blue())
+        Block::bordered().title("World map".blue())
     }
 
-    fn render_bottom_layer(&self, area: Rect, buf: &mut Buffer, state: &mut TrackMapState) {
+    fn render_bottom_layer(&self, area: Rect, buf: &mut Buffer, state: &mut WorldMapState) {
         let bottom_layer = Canvas::default()
             .block(self.block())
             .paint(|ctx| {
@@ -62,7 +62,7 @@ impl TrackMap<'_> {
         bottom_layer.render(area, buf);
     }
 
-    fn render_top_layer(&self, buf: &mut Buffer, state: &mut TrackMapState) {
+    fn render_top_layer(&self, buf: &mut Buffer, state: &mut WorldMapState) {
         let top_layer = Canvas::default()
             .paint(|ctx| {
                 if let Some(selected_object_index) = state.selected_object {
@@ -123,8 +123,8 @@ impl TrackMap<'_> {
     }
 }
 
-impl StatefulWidget for TrackMap<'_> {
-    type State = TrackMapState;
+impl StatefulWidget for WorldMap<'_> {
+    type State = WorldMapState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         state.inner_area = area.inner(Margin::new(1, 1));
@@ -135,9 +135,9 @@ impl StatefulWidget for TrackMap<'_> {
 }
 
 pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
-    let inner_area = app.track_map_state.inner_area;
+    let inner_area = app.world_map_state.inner_area;
     if !inner_area.contains(Position::new(event.column, event.row)) {
-        app.track_map_state.hovered_object = None;
+        app.world_map_state.hovered_object = None;
         return Ok(());
     }
 
@@ -147,15 +147,15 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()>
     if let MouseEventKind::Down(buttom) = event.kind {
         match buttom {
             MouseButton::Left => {
-                app.track_map_state.selected_object = get_nearest_object(app, mouse.x, mouse.y);
+                app.world_map_state.selected_object = get_nearest_object(app, mouse.x, mouse.y);
             }
             MouseButton::Right => {
-                app.track_map_state.selected_object = None;
+                app.world_map_state.selected_object = None;
             }
             _ => {}
         }
     }
-    app.track_map_state.hovered_object = get_nearest_object(app, mouse.x, mouse.y);
+    app.world_map_state.hovered_object = get_nearest_object(app, mouse.x, mouse.y);
 
     Ok(())
 }
@@ -168,7 +168,7 @@ fn get_nearest_object(app: &mut App, x: u16, y: u16) -> Option<usize> {
         .enumerate()
         .min_by_key(|(_, obj)| {
             let state = obj.predict(Utc::now()).unwrap();
-            let (lon, lat) = area_to_lon_lat(x, y, app.track_map_state.inner_area);
+            let (lon, lat) = area_to_lon_lat(x, y, app.world_map_state.inner_area);
             let dx = state.longitude() - lon;
             let dy = state.latitude() - lat;
             ((dx * dx + dy * dy) * 1000.0) as i32

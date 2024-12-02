@@ -17,11 +17,11 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::app::App;
 
-use super::{satellites::SatellitesState, track_map::TrackMapState};
+use super::{satellites::SatellitesState, world_map::WorldMapState};
 
 pub struct ObjectInformation<'a> {
     pub satellites_state: &'a SatellitesState,
-    pub track_map_state: &'a TrackMapState,
+    pub world_map_state: &'a WorldMapState,
 }
 
 pub struct ObjectInformationState {
@@ -162,7 +162,7 @@ impl StatefulWidget for ObjectInformation<'_> {
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         state.inner_area = area.inner(Margin::new(1, 1));
 
-        if let Some(index) = self.track_map_state.selected_object {
+        if let Some(index) = self.world_map_state.selected_object {
             self.render_table(area, buf, state, index);
             self.render_scrollbar(area, buf, state);
         } else {

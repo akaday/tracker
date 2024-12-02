@@ -3,7 +3,7 @@ use std::io;
 use anyhow::Result;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 use ratatui::{backend::CrosstermBackend, Terminal};
-use widgets::{object_information, satellites, track_map};
+use widgets::{object_information, satellites, world_map};
 
 use crate::{
     app::App,
@@ -64,7 +64,7 @@ async fn handle_key_events(event: KeyEvent, app: &mut App) -> Result<()> {
 }
 
 async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
-    track_map::handle_mouse_events(event, app).await?;
+    world_map::handle_mouse_events(event, app).await?;
     object_information::handle_mouse_events(event, app).await?;
     satellites::handle_mouse_events(event, app).await?;
     Ok(())
