@@ -7,7 +7,9 @@ use ratatui::{
     layout::{Margin, Position, Rect},
     style::{Color, Modifier, Style, Stylize},
     text::Text,
-    widgets::{Block, List, ListItem, ListState, Scrollbar, ScrollbarState, StatefulWidget},
+    widgets::{
+        Block, List, ListItem, ListState, Scrollbar, ScrollbarState, StatefulWidget, Widget,
+    },
 };
 use strum::IntoEnumIterator;
 
@@ -58,11 +60,13 @@ impl Default for SatellitesState {
 }
 
 impl Satellites {
-    fn block(&self) -> Block<'static> {
-        Block::bordered().title("Satellites".blue())
+    fn render_block(&self, area: Rect, buf: &mut Buffer, state: &mut SatellitesState) {
+        let block = Block::bordered().title("Satellites".blue());
+        state.inner_area = block.inner(area);
+        block.render(area, buf);
     }
 
-    fn render_list(&self, area: Rect, buf: &mut Buffer, state: &mut SatellitesState) {
+    fn render_list(&self, buf: &mut Buffer, state: &mut SatellitesState) {
         let items = state.items.iter().map(|item| {
             let style = if item.selected {
                 Style::default().fg(Color::White)
@@ -77,11 +81,10 @@ impl Satellites {
             ListItem::new(Text::styled(text, style))
         });
 
-        let list = List::new(items)
-            .block(self.block())
-            .highlight_style(Style::default().add_modifier(Modifier::REVERSED));
+        let list =
+            List::new(items).highlight_style(Style::default().add_modifier(Modifier::REVERSED));
 
-        list.render(area, buf, &mut state.list_state);
+        StatefulWidget::render(list, state.inner_area, buf, &mut state.list_state);
     }
 
     fn render_scrollbar(&self, area: Rect, buf: &mut Buffer, state: &mut SatellitesState) {
@@ -97,9 +100,8 @@ impl StatefulWidget for Satellites {
     type State = SatellitesState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        state.inner_area = area.inner(Margin::new(1, 1));
-
-        self.render_list(area, buf, state);
+        self.render_block(area, buf, state);
+        self.render_list(buf, state);
         self.render_scrollbar(area, buf, state);
     }
 }

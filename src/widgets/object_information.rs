@@ -43,17 +43,13 @@ impl Default for ObjectInformationState {
 }
 
 impl ObjectInformation<'_> {
-    fn block(&self) -> Block<'static> {
-        Block::bordered().title("Object information".blue())
+    fn render_block(&self, area: Rect, buf: &mut Buffer, state: &mut ObjectInformationState) {
+        let block = Block::bordered().title("Object information".blue());
+        state.inner_area = block.inner(area);
+        block.render(area, buf);
     }
 
-    fn render_table(
-        &self,
-        area: Rect,
-        buf: &mut Buffer,
-        state: &mut ObjectInformationState,
-        index: usize,
-    ) {
+    fn render_table(&self, buf: &mut Buffer, state: &mut ObjectInformationState, index: usize) {
         let object = &self.satellites_state.objects[index];
         let object_state = object.predict(Utc::now()).unwrap();
 
@@ -133,9 +129,9 @@ impl ObjectInformation<'_> {
         });
 
         let table = Table::new(rows, widths)
-            .block(self.block())
             .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED));
-        StatefulWidget::render(table, area, buf, &mut state.table_state);
+
+        StatefulWidget::render(table, state.inner_area, buf, &mut state.table_state);
     }
 
     fn render_scrollbar(&self, area: Rect, buf: &mut Buffer, state: &mut ObjectInformationState) {
@@ -146,13 +142,12 @@ impl ObjectInformation<'_> {
         Scrollbar::default().render(inner_area, buf, &mut scrollbar_state);
     }
 
-    fn render_no_object_selected(&self, area: Rect, buf: &mut Buffer) {
+    fn render_no_object_selected(&self, buf: &mut Buffer, state: &mut ObjectInformationState) {
         let paragraph = Paragraph::new("No object selected".dark_gray())
-            .block(self.block())
             .centered()
             .wrap(Wrap { trim: true });
 
-        paragraph.render(area, buf);
+        paragraph.render(state.inner_area, buf);
     }
 }
 
@@ -160,13 +155,12 @@ impl StatefulWidget for ObjectInformation<'_> {
     type State = ObjectInformationState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        state.inner_area = area.inner(Margin::new(1, 1));
-
+        self.render_block(area, buf, state);
         if let Some(index) = self.world_map_state.selected_object {
-            self.render_table(area, buf, state, index);
+            self.render_table(buf, state, index);
             self.render_scrollbar(area, buf, state);
         } else {
-            self.render_no_object_selected(area, buf);
+            self.render_no_object_selected(buf, state);
         }
     }
 }

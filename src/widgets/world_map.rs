@@ -3,7 +3,7 @@ use chrono::{Duration, Utc};
 use crossterm::event::{MouseButton, MouseEvent, MouseEventKind};
 use ratatui::{
     buffer::Buffer,
-    layout::{Margin, Position, Rect},
+    layout::{Position, Rect},
     style::{Color, Stylize},
     widgets::{
         canvas::{Canvas, Line, Map, MapResolution},
@@ -29,13 +29,14 @@ pub struct WorldMapState {
 }
 
 impl WorldMap<'_> {
-    fn block(&self) -> Block<'static> {
-        Block::bordered().title("World map".blue())
+    fn render_block(&self, area: Rect, buf: &mut Buffer, state: &mut WorldMapState) {
+        let block = Block::bordered().title("World map".blue());
+        state.inner_area = block.inner(area);
+        block.render(area, buf);
     }
 
-    fn render_bottom_layer(&self, area: Rect, buf: &mut Buffer, state: &mut WorldMapState) {
+    fn render_bottom_layer(&self, buf: &mut Buffer, state: &mut WorldMapState) {
         let bottom_layer = Canvas::default()
-            .block(self.block())
             .paint(|ctx| {
                 // Draw the world map
                 ctx.draw(&Map {
@@ -59,7 +60,7 @@ impl WorldMap<'_> {
             .x_bounds([-180.0, 180.0])
             .y_bounds([-90.0, 90.0]);
 
-        bottom_layer.render(area, buf);
+        bottom_layer.render(state.inner_area, buf);
     }
 
     fn render_top_layer(&self, buf: &mut Buffer, state: &mut WorldMapState) {
@@ -127,9 +128,8 @@ impl StatefulWidget for WorldMap<'_> {
     type State = WorldMapState;
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
-        state.inner_area = area.inner(Margin::new(1, 1));
-
-        self.render_bottom_layer(area, buf, state);
+        self.render_block(area, buf, state);
+        self.render_bottom_layer(buf, state);
         self.render_top_layer(buf, state);
     }
 }
