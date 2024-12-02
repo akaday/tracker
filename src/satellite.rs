@@ -3,7 +3,7 @@ use std::{fs, path::PathBuf, time::Duration};
 use strum::{Display, EnumIter};
 use ureq::serde_json;
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Display, EnumIter)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Display, EnumIter)]
 pub enum Satellite {
     // Space stations
     #[strum(to_string = "CSS")]

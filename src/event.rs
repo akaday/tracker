@@ -6,16 +6,12 @@ use futures::{FutureExt, StreamExt};
 use tokio::sync::mpsc;
 
 /// Terminal events.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum Event {
-    /// Terminal tick.
-    Tick,
-    /// Key press.
+    Update,
+    Render,
     Key(KeyEvent),
-    /// Mouse click/scroll.
     Mouse(MouseEvent),
-    /// Terminal resize.
-    Resize(u16, u16),
 }
 
 /// Terminal event handler.
@@ -32,25 +28,32 @@ pub struct EventHandler {
 
 impl EventHandler {
     /// Constructs a new instance of [`EventHandler`].
-    pub fn new(tick_rate: u64) -> Self {
-        let tick_rate = Duration::from_millis(tick_rate);
+    pub fn new() -> Self {
+        const UPDATE_RATE: f64 = 60.0;
+        const RENDER_RATE: f64 = 60.0;
+
+        let update_delay = Duration::from_secs_f64(1.0 / UPDATE_RATE);
+        let render_delay = Duration::from_secs_f64(1.0 / RENDER_RATE);
         let (sender, receiver) = mpsc::unbounded_channel();
         let _sender = sender.clone();
         let handler = tokio::spawn(async move {
             let mut reader = crossterm::event::EventStream::new();
-            let mut tick = tokio::time::interval(tick_rate);
+            let mut update_interval = tokio::time::interval(update_delay);
+            let mut render_interval = tokio::time::interval(render_delay);
             loop {
-                let tick_delay = tick.tick();
                 let crossterm_event = reader.next().fuse();
                 tokio::select! {
                   _ = _sender.closed() => {
                     break;
                   }
-                  _ = tick_delay => {
-                    _sender.send(Event::Tick).unwrap();
+                  _ = update_interval.tick() => {
+                    _sender.send(Event::Update).unwrap();
                   }
-                  Some(Ok(evt)) = crossterm_event => {
-                    match evt {
+                  _ = render_interval.tick() => {
+                    _sender.send(Event::Render).unwrap();
+                  }
+                  Some(Ok(event)) = crossterm_event => {
+                    match event {
                       CrosstermEvent::Key(key) => {
                         if key.kind == crossterm::event::KeyEventKind::Press {
                           _sender.send(Event::Key(key)).unwrap();
@@ -58,9 +61,6 @@ impl EventHandler {
                       },
                       CrosstermEvent::Mouse(mouse) => {
                         _sender.send(Event::Mouse(mouse)).unwrap();
-                      },
-                      CrosstermEvent::Resize(x, y) => {
-                        _sender.send(Event::Resize(x, y)).unwrap();
                       },
                       _ => {},
                     }
@@ -84,5 +84,11 @@ impl EventHandler {
             .recv()
             .await
             .ok_or(std::io::Error::new(std::io::ErrorKind::Other, "This is an IO error").into())
+    }
+}
+
+impl Default for EventHandler {
+    fn default() -> Self {
+        Self::new()
     }
 }

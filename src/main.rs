@@ -26,20 +26,18 @@ async fn main() -> Result<()> {
     // Initialize the terminal user interface.
     let backend = CrosstermBackend::new(io::stdout());
     let terminal = Terminal::new(backend)?;
-    let events = EventHandler::new(250);
+    let events = EventHandler::new();
     let mut tui = Tui::new(terminal, events);
     tui.init()?;
 
     // Start the main loop.
     while app.running {
-        // Render the user interface.
-        tui.render(&mut app)?;
         // Handle events.
         match tui.events.next().await? {
-            Event::Tick => app.tick(),
+            Event::Update => app.update(),
+            Event::Render => tui.render(&mut app)?,
             Event::Key(event) => handle_key_events(event, &mut app).await?,
             Event::Mouse(event) => handle_mouse_events(event, &mut app).await?,
-            _ => {}
         }
     }
 
