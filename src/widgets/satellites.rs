@@ -73,7 +73,7 @@ impl Satellites {
             } else {
                 Style::default()
             };
-            let text: String = if item.selected {
+            let text = if item.selected {
                 format!("✓ {}", item.satellite)
             } else {
                 format!("☐ {}", item.satellite)
