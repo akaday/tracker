@@ -28,8 +28,8 @@ pub struct SatellitesState {
 }
 
 impl SatellitesState {
-    /// Update the objects based on the selected satellites.
-    pub fn update_objects(&mut self) {
+    /// Refreshes the selected objects.
+    pub fn refresh_objects(&mut self) {
         self.objects.clear();
         for item in &mut self.items {
             if !item.selected {
@@ -133,7 +133,7 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()>
                     !app.satellites_state.items[index].selected;
                 app.world_map_state.selected_object = None;
                 app.world_map_state.hovered_object = None;
-                app.satellites_state.update_objects();
+                app.satellites_state.refresh_objects();
             }
         }
         MouseEventKind::ScrollDown => {
