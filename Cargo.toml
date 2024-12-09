@@ -12,7 +12,7 @@ isocountry = "0.3"
 arboard = "3.4"
 ureq = { version = "2.11", features = ["json"] }
 
-# TUI framework
+# TUI
 ratatui = "0.29"
 crossterm = { version = "0.28", features = ["event-stream"] }
 unicode-width = "0.2"
