@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf, time::Duration};
+use std::{fs, time::Duration};
 
 use strum::{Display, EnumIter};
 use ureq::serde_json;
@@ -52,7 +52,9 @@ pub enum Satellite {
 
 impl Satellite {
     pub fn get_elements(&self) -> Option<Vec<sgp4::Elements>> {
-        let cache_path = PathBuf::from(format!("cache/{}.json", self.to_string().to_lowercase()));
+        let cache_path = dirs::cache_dir()
+            .unwrap()
+            .join(format!("tracker/{}.json", self.to_string().to_lowercase()));
         fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
 
         // Fetch elements if cache doesn't exist

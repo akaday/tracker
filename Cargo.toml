@@ -21,6 +21,7 @@ unicode-width = "0.2"
 anyhow = "1.0"
 chrono = "0.4"
 strum = { version = "0.26", features = ["derive"] }
+dirs = "5.0"
 
 # Async
 tokio = { version = "1.42", features = ["full"] }
