@@ -11,5 +11,5 @@ pub mod widgets;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    App::new().run().await
+    App::new()?.run().await
 }

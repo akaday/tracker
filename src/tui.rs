@@ -7,7 +7,7 @@ use crossterm::{
 };
 use ratatui::{backend::Backend, Terminal};
 
-use crate::{app::App, event::EventHandler};
+use crate::event::EventHandler;
 
 /// Representation of a terminal user interface.
 ///
@@ -16,7 +16,7 @@ use crate::{app::App, event::EventHandler};
 #[derive(Debug)]
 pub struct Tui<B: Backend> {
     /// Interface to the Terminal.
-    terminal: Terminal<B>,
+    pub terminal: Terminal<B>,
     /// Terminal event handler.
     pub events: EventHandler,
 }
@@ -47,15 +47,6 @@ impl<B: Backend> Tui<B> {
         Ok(())
     }
 
-    /// [`Draw`] the terminal interface by [`rendering`] the widgets.
-    ///
-    /// [`Draw`]: ratatui::Terminal::draw
-    /// [`rendering`]: crate::App::render
-    pub fn render(&mut self, app: &mut App) -> Result<()> {
-        self.terminal.draw(|frame| app.render(frame))?;
-        Ok(())
-    }
-
     /// Resets the terminal interface.
     ///
     /// This function is also used for the panic hook to revert
@@ -69,7 +60,7 @@ impl<B: Backend> Tui<B> {
     /// Exits the terminal interface.
     ///
     /// It disables the raw mode and reverts back the terminal properties.
-    pub fn exit(&mut self) -> Result<()> {
+    pub fn deinit(&mut self) -> Result<()> {
         Self::reset()?;
         self.terminal.show_cursor()?;
         Ok(())

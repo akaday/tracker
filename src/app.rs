@@ -1,12 +1,12 @@
 use std::time::{Duration, Instant};
 
-use anyhow::Result;
+use anyhow::{Ok, Result};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 use ratatui::{
     layout::{Constraint, Layout},
     prelude::CrosstermBackend,
     style::Color,
-    Frame, Terminal,
+    Terminal,
 };
 
 use crate::{
@@ -27,72 +27,70 @@ pub struct App {
     pub world_map_state: WorldMapState,
     pub satellites_state: SatellitesState,
     pub object_information_state: ObjectInformationState,
-}
 
-impl Default for App {
-    fn default() -> Self {
-        Self {
-            running: true,
-            world_map_state: Default::default(),
-            satellites_state: Default::default(),
-            object_information_state: Default::default(),
-        }
-    }
+    tui: Tui<CrosstermBackend<std::io::Stdout>>,
 }
 
 impl App {
     /// Constructs a new instance of [`App`].
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub async fn run(&mut self) -> Result<()> {
-        // Initialize the terminal user interface.
+    pub fn new() -> Result<Self> {
         let backend = CrosstermBackend::new(std::io::stdout());
         let terminal = Terminal::new(backend)?;
         let events = EventHandler::new();
-        let mut tui = Tui::new(terminal, events);
-        tui.init()?;
+        let tui = Tui::new(terminal, events);
+        Ok(Self {
+            running: true,
+            world_map_state: Default::default(),
+            satellites_state: Default::default(),
+            object_information_state: Default::default(),
+            tui,
+        })
+    }
+
+    pub async fn run(&mut self) -> Result<()> {
+        self.tui.init()?;
 
         // Start the main loop.
         while self.running {
             // Handle events.
-            match tui.events.next().await? {
+            match self.tui.events.next().await? {
                 Event::Update => self.update().await,
-                Event::Render => tui.render(self)?,
+                Event::Render => self.render()?,
                 Event::Key(event) => handle_key_events(event, self).await?,
                 Event::Mouse(event) => handle_mouse_events(event, self).await?,
             }
         }
 
-        // Exit the user interface.
-        tui.exit()
+        self.tui.deinit()
     }
 
-    pub fn render(&mut self, frame: &mut Frame) {
-        let horizontal = Layout::horizontal([Constraint::Percentage(80), Constraint::Min(25)]);
-        let [left, right] = horizontal.areas(frame.area());
-        let vertical = Layout::vertical([Constraint::Percentage(60), Constraint::Fill(1)]);
-        let [top_right, bottom_right] = vertical.areas(right);
+    pub fn render(&mut self) -> Result<()> {
+        self.tui.terminal.draw(|frame| {
+            let horizontal = Layout::horizontal([Constraint::Percentage(80), Constraint::Min(25)]);
+            let [left, right] = horizontal.areas(frame.area());
+            let vertical = Layout::vertical([Constraint::Percentage(60), Constraint::Fill(1)]);
+            let [top_right, bottom_right] = vertical.areas(right);
 
-        let world_map = WorldMap {
-            satellites_state: &self.satellites_state,
-            satellit_symbol: "+".to_string(),
-            trajectory_color: Color::LightBlue,
-        };
-        frame.render_stateful_widget(world_map, left, &mut self.world_map_state);
+            let world_map = WorldMap {
+                satellites_state: &self.satellites_state,
+                satellit_symbol: "+".to_string(),
+                trajectory_color: Color::LightBlue,
+            };
+            frame.render_stateful_widget(world_map, left, &mut self.world_map_state);
 
-        let object_information = ObjectInformation {
-            satellites_state: &self.satellites_state,
-            world_map_state: &self.world_map_state,
-        };
-        frame.render_stateful_widget(
-            object_information,
-            top_right,
-            &mut self.object_information_state,
-        );
+            let object_information = ObjectInformation {
+                satellites_state: &self.satellites_state,
+                world_map_state: &self.world_map_state,
+            };
+            frame.render_stateful_widget(
+                object_information,
+                top_right,
+                &mut self.object_information_state,
+            );
 
-        frame.render_stateful_widget(Satellites, bottom_right, &mut self.satellites_state);
+            frame.render_stateful_widget(Satellites, bottom_right, &mut self.satellites_state);
+        })?;
+        Ok(())
     }
 
     /// Handles the tick event of the terminal.
