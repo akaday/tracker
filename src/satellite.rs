@@ -1,6 +1,7 @@
-use std::{fs, time::Duration};
+use std::time::Duration;
 
 use strum::{Display, EnumIter};
+use tokio::fs;
 use ureq::serde_json;
 
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Display, EnumIter)]
@@ -55,18 +56,23 @@ impl Satellite {
         let cache_path = dirs::cache_dir()
             .expect("failed to get cache directory")
             .join(format!("tracker/{}.json", self.to_string().to_lowercase()));
-        fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
+        fs::create_dir_all(cache_path.parent().unwrap())
+            .await
+            .unwrap();
 
         // Fetch elements if cache doesn't exist
-        if !fs::exists(&cache_path).unwrap() {
+        if !std::fs::exists(&cache_path).unwrap() {
             if let Some(elements) = self.fetch_elements().await {
-                fs::write(&cache_path, serde_json::to_string(&elements).unwrap()).unwrap();
+                fs::write(&cache_path, serde_json::to_string(&elements).unwrap())
+                    .await
+                    .unwrap();
             } else {
                 return None;
             }
         }
 
         let age = fs::metadata(&cache_path)
+            .await
             .unwrap()
             .modified()
             .unwrap()
@@ -77,11 +83,13 @@ impl Satellite {
         // Fetch elements if cache is older than 2 hours
         if is_cache_expired {
             if let Some(elements) = self.fetch_elements().await {
-                fs::write(&cache_path, serde_json::to_string(&elements).unwrap()).unwrap();
+                fs::write(&cache_path, serde_json::to_string(&elements).unwrap())
+                    .await
+                    .unwrap();
             }
         }
 
-        let json = fs::read_to_string(&cache_path).unwrap();
+        let json = fs::read_to_string(&cache_path).await.unwrap();
         serde_json::from_str(&json).unwrap()
     }
 
