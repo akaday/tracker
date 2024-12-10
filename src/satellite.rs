@@ -51,7 +51,7 @@ pub enum Satellite {
 }
 
 impl Satellite {
-    pub fn get_elements(&self) -> Option<Vec<sgp4::Elements>> {
+    pub async fn get_elements(&self) -> Option<Vec<sgp4::Elements>> {
         let cache_path = dirs::cache_dir()
             .expect("failed to get cache directory")
             .join(format!("tracker/{}.json", self.to_string().to_lowercase()));
@@ -59,7 +59,7 @@ impl Satellite {
 
         // Fetch elements if cache doesn't exist
         if !fs::exists(&cache_path).unwrap() {
-            if let Some(elements) = self.fetch_elements() {
+            if let Some(elements) = self.fetch_elements().await {
                 fs::write(&cache_path, serde_json::to_string(&elements).unwrap()).unwrap();
             } else {
                 return None;
@@ -76,7 +76,7 @@ impl Satellite {
 
         // Fetch elements if cache is older than 2 hours
         if is_cache_expired {
-            if let Some(elements) = self.fetch_elements() {
+            if let Some(elements) = self.fetch_elements().await {
                 fs::write(&cache_path, serde_json::to_string(&elements).unwrap()).unwrap();
             }
         }
@@ -119,7 +119,7 @@ impl Satellite {
         }
     }
 
-    fn fetch_elements(&self) -> Option<Vec<sgp4::Elements>> {
+    async fn fetch_elements(&self) -> Option<Vec<sgp4::Elements>> {
         let mut request =
             ureq::get("https://celestrak.org/NORAD/elements/gp.php").query("FORMAT", "json");
 

@@ -34,7 +34,7 @@ async fn main() -> Result<()> {
     while app.running {
         // Handle events.
         match tui.events.next().await? {
-            Event::Update => app.update(),
+            Event::Update => app.update().await,
             Event::Render => tui.render(&mut app)?,
             Event::Key(event) => handle_key_events(event, &mut app).await?,
             Event::Mouse(event) => handle_mouse_events(event, &mut app).await?,

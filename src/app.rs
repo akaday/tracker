@@ -66,8 +66,8 @@ impl App {
     }
 
     /// Handles the tick event of the terminal.
-    pub fn update(&mut self) {
-        self.refresh_objects();
+    pub async fn update(&mut self) {
+        self.refresh_objects().await;
     }
 
     /// Set running to false to quit the application.
@@ -75,11 +75,11 @@ impl App {
         self.running = false;
     }
 
-    fn refresh_objects(&mut self) {
+    async fn refresh_objects(&mut self) {
         const OBJECT_UPDATE_INTERVAL: Duration = Duration::from_secs(2 * 60);
         let now = Instant::now();
         if now.duration_since(self.satellites_state.last_object_update) >= OBJECT_UPDATE_INTERVAL {
-            self.satellites_state.refresh_objects();
+            self.satellites_state.refresh_objects().await;
             self.satellites_state.last_object_update = now;
         }
     }
