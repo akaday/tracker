@@ -98,6 +98,7 @@ impl App {
     /// Handles the tick event of the terminal.
     pub async fn update(&mut self) {
         const OBJECT_UPDATE_INTERVAL: Duration = Duration::from_secs(2 * 60);
+
         let now = Instant::now();
         if now.duration_since(self.satellites_state.last_object_update) >= OBJECT_UPDATE_INTERVAL {
             self.satellites_state.refresh_objects().await;

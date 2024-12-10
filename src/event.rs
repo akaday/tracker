@@ -29,17 +29,17 @@ pub struct EventHandler {
 impl EventHandler {
     /// Constructs a new instance of [`EventHandler`].
     pub fn new() -> Self {
-        const UPDATE_RATE: f64 = 60.0;
+        const UPDATE_RATE: f64 = 10.0;
         const RENDER_RATE: f64 = 60.0;
 
-        let update_delay = Duration::from_secs_f64(1.0 / UPDATE_RATE);
-        let render_delay = Duration::from_secs_f64(1.0 / RENDER_RATE);
+        let update_period = Duration::from_secs_f64(1.0 / UPDATE_RATE);
+        let render_period = Duration::from_secs_f64(1.0 / RENDER_RATE);
         let (sender, receiver) = mpsc::unbounded_channel();
         let _sender = sender.clone();
         let handler = tokio::spawn(async move {
             let mut reader = crossterm::event::EventStream::new();
-            let mut update_interval = tokio::time::interval(update_delay);
-            let mut render_interval = tokio::time::interval(render_delay);
+            let mut update_interval = tokio::time::interval(update_period);
+            let mut render_interval = tokio::time::interval(render_period);
             loop {
                 let crossterm_event = reader.next().fuse();
                 tokio::select! {
