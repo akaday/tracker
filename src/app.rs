@@ -1,15 +1,22 @@
 use std::time::{Duration, Instant};
 
+use anyhow::Result;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent};
 use ratatui::{
     layout::{Constraint, Layout},
+    prelude::CrosstermBackend,
     style::Color,
-    Frame,
+    Frame, Terminal,
 };
 
-use crate::widgets::{
-    object_information::{ObjectInformation, ObjectInformationState},
-    satellites::{Satellites, SatellitesState},
-    world_map::{WorldMap, WorldMapState},
+use crate::{
+    event::{Event, EventHandler},
+    tui::Tui,
+    widgets::{
+        object_information::{self, ObjectInformation, ObjectInformationState},
+        satellites::{self, Satellites, SatellitesState},
+        world_map::{self, WorldMap, WorldMapState},
+    },
 };
 
 /// Application.
@@ -37,6 +44,29 @@ impl App {
     /// Constructs a new instance of [`App`].
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub async fn run(&mut self) -> Result<()> {
+        // Initialize the terminal user interface.
+        let backend = CrosstermBackend::new(std::io::stdout());
+        let terminal = Terminal::new(backend)?;
+        let events = EventHandler::new();
+        let mut tui = Tui::new(terminal, events);
+        tui.init()?;
+
+        // Start the main loop.
+        while self.running {
+            // Handle events.
+            match tui.events.next().await? {
+                Event::Update => self.update().await,
+                Event::Render => tui.render(self)?,
+                Event::Key(event) => handle_key_events(event, self).await?,
+                Event::Mouse(event) => handle_mouse_events(event, self).await?,
+            }
+        }
+
+        // Exit the user interface.
+        tui.exit()
     }
 
     pub fn render(&mut self, frame: &mut Frame) {
@@ -79,4 +109,28 @@ impl App {
     pub fn quit(&mut self) {
         self.running = false;
     }
+}
+
+async fn handle_key_events(event: KeyEvent, app: &mut App) -> Result<()> {
+    match event.code {
+        // Exit application on `ESC`
+        KeyCode::Esc => {
+            app.quit();
+        }
+        // Exit application on `Ctrl-C`
+        KeyCode::Char('c') => {
+            if event.modifiers == KeyModifiers::CONTROL {
+                app.quit();
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()> {
+    world_map::handle_mouse_events(event, app).await?;
+    object_information::handle_mouse_events(event, app).await?;
+    satellites::handle_mouse_events(event, app).await?;
+    Ok(())
 }
