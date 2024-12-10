@@ -176,9 +176,10 @@ pub async fn handle_mouse_events(event: MouseEvent, app: &mut App) -> Result<()>
         MouseEventKind::Down(MouseButton::Left) => {
             // Copy the clicked value to the clipboard.
             if let Some(index) = app.object_information_state.table_state.selected() {
-                let mut clipboard = Clipboard::new().unwrap();
-                let value = app.object_information_state.items[index].1.clone();
-                clipboard.set_text(value).unwrap();
+                if let Ok(mut clipboard) = Clipboard::new() {
+                    let value = app.object_information_state.items[index].1.clone();
+                    clipboard.set_text(value).unwrap();
+                }
             }
         }
         MouseEventKind::ScrollDown => {

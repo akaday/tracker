@@ -25,8 +25,16 @@ pub struct Object {
 impl Object {
     pub fn from_elements(elements: sgp4::Elements) -> Self {
         Self {
-            name: elements.object_name.as_ref().unwrap().clone(),
-            cospar_id: elements.international_designator.as_ref().unwrap().clone(),
+            name: elements
+                .object_name
+                .as_ref()
+                .cloned()
+                .unwrap_or("Unknown".to_string()),
+            cospar_id: elements
+                .international_designator
+                .as_ref()
+                .cloned()
+                .unwrap_or("Unknown".to_string()),
             norad_id: elements.norad_id,
             epoch: DateTime::from_naive_utc_and_offset(elements.datetime, Utc),
             drag_term: elements.drag_term,

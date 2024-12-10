@@ -53,7 +53,7 @@ pub enum Satellite {
 impl Satellite {
     pub fn get_elements(&self) -> Option<Vec<sgp4::Elements>> {
         let cache_path = dirs::cache_dir()
-            .unwrap()
+            .expect("failed to get cache directory")
             .join(format!("tracker/{}.json", self.to_string().to_lowercase()));
         fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
 
@@ -72,9 +72,10 @@ impl Satellite {
             .unwrap()
             .elapsed()
             .unwrap();
+        let is_cache_expired = age > Duration::from_secs(2 * 60 * 60);
 
         // Fetch elements if cache is older than 2 hours
-        if age > Duration::from_secs(2 * 60 * 60) {
+        if is_cache_expired {
             if let Some(elements) = self.fetch_elements() {
                 fs::write(&cache_path, serde_json::to_string(&elements).unwrap()).unwrap();
             }
@@ -123,14 +124,18 @@ impl Satellite {
             ureq::get("https://celestrak.org/NORAD/elements/gp.php").query("FORMAT", "json");
 
         request = match (self.cospar_id(), self.group()) {
-            (Some(id), _) => request.query("INTDES", id),
+            (Some(id), None) => request.query("INTDES", id),
             (None, Some(group)) => request.query("GROUP", group),
-            (None, None) => unreachable!(),
+            _ => unreachable!(),
         };
 
         request
             .call()
-            .map(|response| response.into_json().unwrap())
+            .map(|response| {
+                response
+                    .into_json()
+                    .expect("failed to parse JSON from celestrak.org")
+            })
             .ok()
     }
 }
