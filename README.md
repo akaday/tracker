@@ -12,14 +12,27 @@ A terminal-based real-time satellite tracking and orbit prediction application.
 
 ## Installation
 
-### Distro Packages
+### Package manager
 
 #### Arch Linux
 
-`tracker` is available [in the AUR](https://aur.archlinux.org/packages/tracker/):
+`tracker` is available in the [AUR](https://aur.archlinux.org/packages/tracker/):
 
 ```bash
 paru -S tracker # use your favorite AUR helper
+```
+
+#### Windows
+
+```powershell
+scoop bucket add shenmian https://github.com/ShenMian/bucket
+scoop install tracker
+```
+
+### Build from source
+
+```bash
+cargo install --git https://github.com/ShenMian/tracker
 ```
 
 ## License
