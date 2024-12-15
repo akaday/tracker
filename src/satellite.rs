@@ -52,6 +52,44 @@ pub enum Satellite {
 }
 
 impl Satellite {
+    /// Returns the international designator.
+    fn cospar_id(&self) -> Option<&str> {
+        match self {
+            Self::Iss => Some("1998-067A"),
+            Self::Css => Some("2021-035A"),
+            Self::Dfh1 => Some("1970-034A"),
+            _ => None,
+        }
+    }
+
+    /// Returns CelesTrak group name.
+    fn group(&self) -> Option<&str> {
+        match self {
+            Self::Weather => Some("weather"),
+            Self::Noaa => Some("noaa"),
+            Self::Goes => Some("goes"),
+            Self::EarthResources => Some("resource"),
+            Self::SearchRescue => Some("sarsat"),
+            Self::DisasterMonitoring => Some("dmc"),
+            Self::Gps => Some("gps-ops"),
+            Self::Glonass => Some("glo-ops"),
+            Self::Galileo => Some("galileo"),
+            Self::Beidou => Some("beidou"),
+            Self::SpaceEarthScience => Some("science"),
+            Self::Geodetic => Some("geodetic"),
+            Self::Engineering => Some("engineering"),
+            Self::Education => Some("education"),
+            Self::Military => Some("military"),
+            Self::RadarCalibration => Some("radar"),
+            Self::CubeSats => Some("cubesat"),
+            _ => None,
+        }
+    }
+
+    /// Returns SGP4 elements.
+    ///
+    /// If cache is older than 2 hours, fetches elements from celestrak.org.
+    /// Otherwise, reads elements from cache.
     pub async fn get_elements(&self) -> Option<Vec<sgp4::Elements>> {
         let cache_path = dirs::cache_dir()
             .expect("failed to get cache directory")
@@ -93,40 +131,7 @@ impl Satellite {
         serde_json::from_str(&json).unwrap()
     }
 
-    /// Returns the international designator
-    fn cospar_id(&self) -> Option<&str> {
-        match self {
-            Self::Iss => Some("1998-067A"),
-            Self::Css => Some("2021-035A"),
-            Self::Dfh1 => Some("1970-034A"),
-            _ => None,
-        }
-    }
-
-    /// Returns CelesTrak group name
-    fn group(&self) -> Option<&str> {
-        match self {
-            Self::Weather => Some("weather"),
-            Self::Noaa => Some("noaa"),
-            Self::Goes => Some("goes"),
-            Self::EarthResources => Some("resource"),
-            Self::SearchRescue => Some("sarsat"),
-            Self::DisasterMonitoring => Some("dmc"),
-            Self::Gps => Some("gps-ops"),
-            Self::Glonass => Some("glo-ops"),
-            Self::Galileo => Some("galileo"),
-            Self::Beidou => Some("beidou"),
-            Self::SpaceEarthScience => Some("science"),
-            Self::Geodetic => Some("geodetic"),
-            Self::Engineering => Some("engineering"),
-            Self::Education => Some("education"),
-            Self::Military => Some("military"),
-            Self::RadarCalibration => Some("radar"),
-            Self::CubeSats => Some("cubesat"),
-            _ => None,
-        }
-    }
-
+    /// Fetches SGP4 elements from celestrak.org.
     async fn fetch_elements(&self) -> Option<Vec<sgp4::Elements>> {
         let mut request =
             ureq::get("https://celestrak.org/NORAD/elements/gp.php").query("FORMAT", "json");

@@ -47,6 +47,7 @@ impl App {
         })
     }
 
+    /// Runs the main loop of the application.
     pub async fn run(&mut self) -> Result<()> {
         self.tui.init()?;
 
@@ -64,6 +65,7 @@ impl App {
         self.tui.deinit()
     }
 
+    /// Renders the terminal interface.
     pub fn render(&mut self) -> Result<()> {
         self.tui.terminal.draw(|frame| {
             let horizontal = Layout::horizontal([Constraint::Percentage(80), Constraint::Min(25)]);

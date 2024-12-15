@@ -4,19 +4,30 @@ use chrono::{DateTime, Datelike, Timelike, Utc};
 
 #[derive(Clone, Debug)]
 pub struct Object {
+    /// The name of the object.
     name: String,
+    /// The COSPAR ID of the object.
     cospar_id: String,
+    /// The NORAD ID of the object.
     norad_id: u64,
 
     epoch: DateTime<Utc>,
 
+    /// Radiation pressure coefficient in earth radii⁻¹.
     drag_term: f64,
+    /// Angle between the equator and the orbit plane in deg.
     inclination: f64,
+    /// Angle between vernal equinox and the point where the orbit crosses the equatorial plane in deg.
     right_ascension: f64,
+    /// The shape of the orbit.
     eccentricity: f64,
+    /// Angle between the ascending node and the orbit's point of closest approach to the earth in deg.
     argument_of_perigee: f64,
+    /// Angle of the satellite location measured from perigee in deg.
     mean_anomaly: f64,
+    /// Mean number of orbits per day in day⁻¹ (Kozai convention).
     mean_motion: f64,
+    /// The orbit number at epoch.
     revolution_number: u64,
 
     constants: sgp4::Constants,
